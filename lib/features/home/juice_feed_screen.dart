@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_tindercard/flutter_tindercard.dart';
+import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import '../../core/theme/juice_theme.dart';
 import '../../widgets/juice_card.dart';
 
@@ -11,7 +11,7 @@ class JuiceFeedScreen extends StatefulWidget {
 }
 
 class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
-  CardController controller = CardController();
+  final CardSwiperController controller = CardSwiperController();
 
   final List<Map<String, dynamic>> _mockUsers = [
     {
@@ -38,6 +38,12 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
   ];
 
   @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -52,30 +58,27 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
       body: Center(
         child: SizedBox(
           height: MediaQuery.of(context).size.height * 0.7,
-          child: TinderSwapCard(
-            swipeUp: true,
-            swipeDown: true,
-            orientation: AmassOrientation.BOTTOM,
-            totalNum: _mockUsers.length,
-            stackNum: 3,
-            swipeEdge: 4.0,
-            maxWidth: MediaQuery.of(context).size.width * 0.9,
-            maxHeight: MediaQuery.of(context).size.height * 0.8,
-            minWidth: MediaQuery.of(context).size.width * 0.8,
-            minHeight: MediaQuery.of(context).size.height * 0.7,
-            cardBuilder: (context, index) {
+          child: CardSwiper(
+            controller: controller,
+            cardsCount: _mockUsers.length,
+            allowedSwipeDirection: const AllowedSwipeDirection.all(),
+            numberOfCardsDisplayed: 3,
+            backCardOffset: const Offset(0, 40),
+            padding: const EdgeInsets.all(24.0),
+            cardBuilder: (context, index, horizontalOffsetPercentage,
+                verticalOffsetPercentage) {
               return JuiceCard(user: _mockUsers[index]);
             },
-            cardController: controller,
-            swipeUpdateCallback: (details, align) {
-              if (align.x < 0) {
-                // Left swipe
-              } else if (align.x > 0) {
-                // Right swipe
+            onSwipe: (previousIndex, currentIndex, direction) {
+              if (direction == CardSwiperDirection.left) {
+                // Left swipe — pass
+              } else if (direction == CardSwiperDirection.right) {
+                // Right swipe — like
               }
+              return true; // return false to cancel the swipe
             },
-            swipeCompleteCallback: (orientation, index) {
-              // Handle completion
+            onEnd: () {
+              // All cards have been swiped
             },
           ),
         ),
