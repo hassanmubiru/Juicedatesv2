@@ -17,11 +17,16 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
-    afterEvaluate {
+    fun configureAndroid() {
         val android = project.extensions.findByName("android") as? com.android.build.gradle.BaseExtension
         android?.apply {
             ndkVersion = "25.1.8937393"
         }
+    }
+    if (project.state.executed) {
+        configureAndroid()
+    } else {
+        project.afterEvaluate { configureAndroid() }
     }
 }
 
