@@ -11,7 +11,7 @@ plugins {
 android {
     namespace = "com.juice.juicedates"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "25.1.8937393"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
