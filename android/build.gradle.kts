@@ -17,6 +17,12 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
+    afterEvaluate {
+        val android = project.extensions.findByName("android") as? com.android.build.gradle.BaseExtension
+        android?.apply {
+            ndkVersion = "25.1.8937393"
+        }
+    }
 }
 
 tasks.register<Delete>("clean") {
