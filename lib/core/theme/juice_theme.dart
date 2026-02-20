@@ -58,12 +58,12 @@ class JuiceTheme {
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
         ),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 8,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
-        shadowColor: primaryTangerine.withOpacity(0.2),
+        shadowColor: primaryTangerine.withValues(alpha: 0.2),
       ),
     );
   }

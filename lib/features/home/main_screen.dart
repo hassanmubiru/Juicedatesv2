@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../features/home/juice_feed_screen.dart';
-import '../features/matches/matches_list_screen.dart';
-import '../features/chat/chat_list_screen.dart';
-import '../features/events/juice_tribes_screen.dart';
-import '../core/theme/juice_theme.dart';
+import 'package:juicedates/features/home/juice_feed_screen.dart';
+import 'package:juicedates/features/matches/matches_list_screen.dart';
+import 'package:juicedates/features/chat/chat_list_screen.dart';
+import 'package:juicedates/features/events/juice_tribes_screen.dart';
+import 'package:juicedates/core/theme/juice_theme.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
