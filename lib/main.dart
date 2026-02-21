@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'core/theme/juice_theme.dart';
 import 'blocs/auth_bloc.dart';
 import 'features/onboarding/splash_screen.dart';

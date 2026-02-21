@@ -24,7 +24,7 @@ class JuiceButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(30),
               boxShadow: [
                 BoxShadow(
-                  color: JuiceTheme.primaryTangerine.withOpacity(0.3),
+                  color: JuiceTheme.primaryTangerine.withValues(alpha: 0.3),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),

@@ -23,7 +23,7 @@ class PremiumFiltersScreen extends StatelessWidget {
           ),
           // Locked Overlay
           Container(
-            color: Colors.white.withOpacity(0.8),
+            color: Colors.white.withValues(alpha: 0.8),
             child: Center(
               child: Card(
                 margin: const EdgeInsets.all(32),

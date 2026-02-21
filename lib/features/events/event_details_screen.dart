@@ -18,7 +18,7 @@ class EventDetailsScreen extends StatelessWidget {
               title: Text(tribe['title'], style: const TextStyle(fontWeight: FontWeight.bold)),
               background: Container(
                 decoration: BoxDecoration(gradient: JuiceTheme.primaryGradient),
-                child: Icon(tribe['image'] as IconData, size: 80, color: Colors.white.withOpacity(0.5)),
+                child: Icon(tribe['image'] as IconData, size: 80, color: Colors.white.withValues(alpha: 0.5)),
               ),
             ),
           ),
@@ -82,7 +82,7 @@ class EventDetailsScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: JuiceTheme.primaryTangerine.withOpacity(0.05),
+        color: JuiceTheme.primaryTangerine.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(

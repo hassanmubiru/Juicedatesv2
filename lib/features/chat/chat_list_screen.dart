@@ -101,27 +101,21 @@ class ChatListScreen extends StatelessWidget {
   }
 
   Widget _buildTierBadge(int tier) {
-    Color color;
     String label;
     switch (tier) {
       case 1:
-        color = JuiceTheme.juiceGreen;
         label = '💚';
         break;
       case 2:
-        color = Colors.orange;
         label = '🧡';
         break;
       case 3:
-        color = Colors.red;
         label = '❤️';
         break;
       case 4:
-        color = Colors.blue;
         label = '💎';
         break;
       default:
-        color = Colors.grey;
         label = '💚';
     }
     return Text(label, style: const TextStyle(fontSize: 12));

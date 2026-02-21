@@ -47,7 +47,7 @@ class ProfileSetupScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: JuiceTheme.primaryTangerine.withOpacity(0.1),
+                color: JuiceTheme.primaryTangerine.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(

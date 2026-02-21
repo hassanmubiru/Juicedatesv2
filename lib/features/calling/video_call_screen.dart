@@ -12,7 +12,7 @@ class VideoCallScreen extends StatelessWidget {
         children: [
           // Remote Video Placeholder
           Center(
-            child: Icon(Icons.person, size: 200, color: Colors.white.withOpacity(0.1)),
+            child: Icon(Icons.person, size: 200, color: Colors.white.withValues(alpha: 0.1)),
           ),
           // Local Video Preview
           Positioned(
