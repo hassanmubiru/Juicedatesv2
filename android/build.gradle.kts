@@ -20,11 +20,12 @@ subprojects {
 }
 
 subprojects {
-    afterEvaluate {
-        val android = extensions.findByType(com.android.build.gradle.BaseExtension::class.java)
-        android?.compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_11
-            targetCompatibility = JavaVersion.VERSION_11
+    plugins.withId("com.android.library") {
+        extensions.configure<com.android.build.gradle.LibraryExtension> {
+            compileOptions {
+                sourceCompatibility = JavaVersion.VERSION_11
+                targetCompatibility = JavaVersion.VERSION_11
+            }
         }
     }
 }
