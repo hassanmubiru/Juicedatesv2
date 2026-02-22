@@ -26,7 +26,9 @@ class ChatListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Chats')),
-      body: ListView.separated(
+      body: _chats.isEmpty
+          ? _buildEmptyState()
+          : ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: _chats.length,
         separatorBuilder: (context, index) => const Divider(),
@@ -119,5 +121,24 @@ class ChatListScreen extends StatelessWidget {
         label = '💚';
     }
     return Text(label, style: const TextStyle(fontSize: 12));
+  }
+
+  Widget _buildEmptyState() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.chat_bubble_outline_rounded, size: 80, color: Colors.grey),
+          SizedBox(height: 16),
+          Text('No chats yet', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          SizedBox(height: 8),
+          Text(
+            'Match with someone and start a conversation!',
+            style: TextStyle(color: Colors.grey),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
   }
 }

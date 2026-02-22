@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/juice_theme.dart';
+import '../../core/utils/juice_engine.dart';
 import '../../widgets/juice_button.dart';
 
 class JuiceSummaryScreen extends StatelessWidget {
@@ -7,6 +8,22 @@ class JuiceSummaryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Receive the computed JuiceProfile from the quiz screen.
+    final profile = ModalRoute.of(context)?.settings.arguments as JuiceProfile? ??
+        JuiceProfile(family: 0.9, career: 0.6, lifestyle: 0.8, ethics: 0.7, fun: 0.5);
+
+    // Derive a dominant category title.
+    final scores = {
+      'Family': profile.family,
+      'Career': profile.career,
+      'Lifestyle': profile.lifestyle,
+      'Ethics': profile.ethics,
+      'Fun': profile.fun,
+    };
+    final dominant = scores.entries.reduce((a, b) => a.value >= b.value ? a : b);
+    final overallStrength = (scores.values.reduce((a, b) => a + b) / scores.length * 100).round();
+    final dominantTitle = '${dominant.key} Juice Master';
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -32,32 +49,41 @@ class JuiceSummaryScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(30),
-                    boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 20)],
+                    boxShadow: [const BoxShadow(color: Colors.black26, blurRadius: 20)],
                   ),
                   child: Column(
                     children: [
                       const Icon(Icons.stars_rounded, size: 60, color: JuiceTheme.secondaryCitrus),
                       const SizedBox(height: 16),
                       Text(
-                        'Family Juice Master',
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: JuiceTheme.primaryTangerine),
+                        dominantTitle,
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineMedium
+                            ?.copyWith(color: JuiceTheme.primaryTangerine),
+                        textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
-                      const Text(
-                        '85% Core Strength',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      Text(
+                        '$overallStrength% Core Strength',
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 24),
-                      _buildStatRow('Family', 0.9),
-                      _buildStatRow('Career', 0.6),
-                      _buildStatRow('Lifestyle', 0.8),
-                      _buildStatRow('Ethics', 0.7),
+                      _buildStatRow('Family 🌿', profile.family),
+                      _buildStatRow('Career 💼', profile.career),
+                      _buildStatRow('Lifestyle ☀️', profile.lifestyle),
+                      _buildStatRow('Ethics ⚖️', profile.ethics),
+                      _buildStatRow('Fun 🎉', profile.fun),
                     ],
                   ),
                 ),
                 const Spacer(),
                 JuiceButton(
-                  onPressed: () => Navigator.pushReplacementNamed(context, '/profile-setup'),
+                  onPressed: () => Navigator.pushReplacementNamed(
+                    context,
+                    '/profile-setup',
+                    arguments: profile,
+                  ),
                   text: 'Define My Profile',
                   isGradient: false,
                 ),

@@ -14,7 +14,9 @@ class MatchesListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Matches')),
-      body: ListView.separated(
+      body: _matches.isEmpty
+          ? _buildEmptyState()
+          : ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: _matches.length,
         separatorBuilder: (context, index) => const SizedBox(height: 12),
@@ -52,6 +54,25 @@ class MatchesListScreen extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.favorite_border_rounded, size: 80, color: Colors.grey),
+          SizedBox(height: 16),
+          Text('No matches yet', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          SizedBox(height: 8),
+          Text(
+            'Keep swiping to find your Juice match!',
+            style: TextStyle(color: Colors.grey),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

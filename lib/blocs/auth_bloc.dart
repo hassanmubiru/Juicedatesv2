@@ -22,19 +22,21 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   AuthBloc() : super(AuthInitial()) {
-    on<AuthCheckRequested>((event, emit) {
-      final user = _auth.currentUser;
-      if (user != null) {
-        emit(AuthAuthenticated(user));
-      } else {
-        emit(AuthUnauthenticated());
-      }
+    // Listen to the Firebase auth state stream for the lifetime of the bloc.
+    // This covers cold start, sign-in, and sign-out automatically.
+    on<AuthCheckRequested>((event, emit) async {
+      await emit.forEach(
+        _auth.authStateChanges(),
+        onData: (user) =>
+            user != null ? AuthAuthenticated(user) : AuthUnauthenticated(),
+        onError: (_, __) => AuthUnauthenticated(),
+      );
     });
 
     on<AuthLoggedIn>((event, emit) => emit(AuthAuthenticated(event.user)));
     on<AuthLoggedOut>((event, emit) async {
       await _auth.signOut();
-      emit(AuthUnauthenticated());
+      // State is automatically updated via authStateChanges stream above.
     });
   }
 }

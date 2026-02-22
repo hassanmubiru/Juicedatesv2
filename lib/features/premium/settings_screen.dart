@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../blocs/auth_bloc.dart';
 import '../../core/theme/juice_theme.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -53,7 +55,10 @@ class SettingsScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: TextButton(
-              onPressed: () {},
+              onPressed: () {
+                context.read<AuthBloc>().add(AuthLoggedOut());
+                Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
+              },
               child: const Text('Logout', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
             ),
           ),

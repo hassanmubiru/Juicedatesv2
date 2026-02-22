@@ -65,9 +65,9 @@ class JuiceEngine {
   }
 
   static double sparksPotential(JuiceProfile a, JuiceProfile b, {bool hasVoice = false, double momentum = 0.5}) {
-    // 85pt algorithm: 40% values + 20% voice + 15% momentum + 10% lifestyle
-    
-    // Values similarity (Euclidean distance Normalized)
+    // 85pt algorithm: 40% values (5 categories) + 20% voice + 15% momentum + 10% lifestyle
+
+    // Values similarity across all 5 categories (family, career, ethics, fun, lifestyle)
     double valuesDiff = 0;
     valuesDiff += (a.family - b.family).abs();
     valuesDiff += (a.career - b.career).abs();
@@ -75,7 +75,7 @@ class JuiceEngine {
     valuesDiff += (a.fun - b.fun).abs();
     double valuesScore = (1.0 - (valuesDiff / 4.0)) * 40;
 
-    // Lifestyle similarity
+    // Lifestyle similarity (separate weight)
     double lifestyleScore = (1.0 - (a.lifestyle - b.lifestyle).abs()) * 10;
 
     // Voice booster
@@ -85,8 +85,8 @@ class JuiceEngine {
     double momentumScore = momentum * 15;
 
     double totalScore = valuesScore + lifestyleScore + voiceBonus + momentumScore;
-    
-    // Scale to percentage of 85
-    return (totalScore / 85) * 100;
+
+    // Clamp and scale to percentage (max possible = 85 points → 100%)
+    return (totalScore / 85 * 100).clamp(0.0, 100.0);
   }
 }

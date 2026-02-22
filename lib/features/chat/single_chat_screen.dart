@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/juice_theme.dart';
 import '../../widgets/tier_meter.dart';
+import '../calling/video_call_screen.dart';
+import '../calling/audio_call_screen.dart';
 
 class SingleChatScreen extends StatefulWidget {
   final String name;
@@ -54,8 +56,18 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
           ],
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.videocam_rounded), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.call_rounded), onPressed: () {}),
+          IconButton(
+              icon: const Icon(Icons.videocam_rounded),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const VideoCallScreen()),
+              )),
+          IconButton(
+              icon: const Icon(Icons.call_rounded),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AudioCallScreen()),
+              )),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(40),

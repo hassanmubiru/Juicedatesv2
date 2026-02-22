@@ -29,42 +29,32 @@ class _MainScreenState extends State<MainScreen> {
         index: _selectedIndex,
         children: _screens,
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 10,
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: (index) => setState(() => _selectedIndex = index),
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: JuiceTheme.primaryTangerine,
-          unselectedItemColor: Colors.grey,
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.local_fire_department_rounded),
-              label: 'Feed',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.favorite_rounded),
-              label: 'Matches',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.chat_bubble_rounded),
-              label: 'Chats',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.groups_rounded),
-              label: 'Tribes',
-            ),
-          ],
-        ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: (index) => setState(() => _selectedIndex = index),
+        indicatorColor: JuiceTheme.primaryTangerine.withValues(alpha: 0.15),
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.local_fire_department_outlined),
+            selectedIcon: Icon(Icons.local_fire_department_rounded, color: JuiceTheme.primaryTangerine),
+            label: 'Feed',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.favorite_outline_rounded),
+            selectedIcon: Icon(Icons.favorite_rounded, color: JuiceTheme.primaryTangerine),
+            label: 'Matches',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.chat_bubble_outline_rounded),
+            selectedIcon: Icon(Icons.chat_bubble_rounded, color: JuiceTheme.primaryTangerine),
+            label: 'Chats',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.groups_outlined),
+            selectedIcon: Icon(Icons.groups_rounded, color: JuiceTheme.primaryTangerine),
+            label: 'Tribes',
+          ),
+        ],
       ),
     );
   }

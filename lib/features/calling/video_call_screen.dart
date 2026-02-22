@@ -38,7 +38,8 @@ class VideoCallScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _buildCallAction(Icons.mic_none_rounded, Colors.white24),
-                _buildCallAction(Icons.call_end_rounded, Colors.red, isEnd: true),
+                _buildCallAction(Icons.call_end_rounded, Colors.red,
+                    isEnd: true, onTap: () => Navigator.pop(context)),
                 _buildCallAction(Icons.videocam_off_rounded, Colors.white24),
               ],
             ),
@@ -60,15 +61,18 @@ class VideoCallScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCallAction(IconData icon, Color color, {bool isEnd = false}) {
-    return Container(
-      width: isEnd ? 72 : 56,
-      height: isEnd ? 72 : 56,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
+  Widget _buildCallAction(IconData icon, Color color, {bool isEnd = false, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: isEnd ? 72 : 56,
+        height: isEnd ? 72 : 56,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: Colors.white, size: isEnd ? 32 : 24),
       ),
-      child: Icon(icon, color: Colors.white, size: isEnd ? 32 : 24),
     );
   }
 }

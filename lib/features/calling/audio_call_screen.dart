@@ -47,7 +47,8 @@ class AudioCallScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _buildAction(Icons.mic_off_rounded),
-                _buildAction(Icons.call_end_rounded, color: Colors.red),
+                _buildAction(Icons.call_end_rounded,
+                    color: Colors.red, onTap: () => Navigator.pop(context)),
                 _buildAction(Icons.volume_up_rounded),
               ],
             ),
@@ -58,12 +59,15 @@ class AudioCallScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAction(IconData icon, {Color color = Colors.white24}) {
-    return Container(
-      width: 64,
-      height: 64,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-      child: Icon(icon, color: Colors.white),
+  Widget _buildAction(IconData icon, {Color color = Colors.white24, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 64,
+        height: 64,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        child: Icon(icon, color: Colors.white),
+      ),
     );
   }
 }

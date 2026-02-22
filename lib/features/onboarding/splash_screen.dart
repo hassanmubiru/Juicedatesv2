@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lottie/lottie.dart';
+import '../../blocs/auth_bloc.dart';
 import '../../core/theme/juice_theme.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -13,12 +15,16 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _navigateToLogin();
+    _navigateAfterSplash();
   }
 
-  _navigateToLogin() async {
-    await Future.delayed(const Duration(seconds: 3));
-    if (mounted) {
+  _navigateAfterSplash() async {
+    await Future.delayed(const Duration(seconds: 2));
+    if (!mounted) return;
+    final state = context.read<AuthBloc>().state;
+    if (state is AuthAuthenticated) {
+      Navigator.pushReplacementNamed(context, '/home');
+    } else {
       Navigator.pushReplacementNamed(context, '/login');
     }
   }
