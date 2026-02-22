@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/juice_theme.dart';
 import '../../core/utils/juice_engine.dart';
-import '../../models/user_models.dart';
 import '../../widgets/juice_button.dart';
 
 class QuizScreen extends StatefulWidget {
