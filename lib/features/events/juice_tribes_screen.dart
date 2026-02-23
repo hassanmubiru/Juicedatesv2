@@ -1,11 +1,168 @@
 import 'package:flutter/material.dart';
+import '../../core/network/firestore_service.dart';
 import '../../core/theme/juice_theme.dart';
+import '../../models/user_models.dart';
 import 'event_details_screen.dart';
 
 class JuiceTribesScreen extends StatelessWidget {
   const JuiceTribesScreen({super.key});
 
-  final List<Map<String, dynamic>> _tribes = const [
+  static const _fallbackTribes = [
+    {
+      'id': 'local_1',
+      'title': 'Family First Picnic',
+      'category': 'Family',
+      'date': 'Oct 24, 2026',
+      'attendees': 42,
+    },
+    {
+      'id': 'local_2',
+      'title': 'Startup Founders Mixer',
+      'category': 'Career',
+      'date': 'Oct 26, 2026',
+      'attendees': 18,
+    },
+    {
+      'id': 'local_3',
+      'title': 'Sunset Yoga & Values',
+      'category': 'Lifestyle',
+      'date': 'Oct 28, 2026',
+      'attendees': 35,
+    },
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final service = FirestoreService();
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Juice Tribes')),
+      body: StreamBuilder<List<JuiceEvent>>(
+        stream: service.getEvents(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final events = snapshot.data ?? [];
+          if (events.isEmpty) return _buildFallbackList(context);
+          return _buildEventList(context, events);
+        },
+      ),
+    );
+  }
+
+  Widget _buildFallbackList(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _fallbackTribes.length,
+      itemBuilder: (context, index) {
+        final t = Map<String, dynamic>.from(_fallbackTribes[index]);
+        return _buildEventCard(
+          context,
+          JuiceEvent(
+            id: t['id'] as String,
+            title: t['title'] as String,
+            category: t['category'] as String,
+            date: t['date'] as String,
+            attendees: t['attendees'] as int,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEventList(BuildContext context, List<JuiceEvent> events) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: events.length,
+      itemBuilder: (context, index) =>
+          _buildEventCard(context, events[index]),
+    );
+  }
+
+  Widget _buildEventCard(BuildContext context, JuiceEvent event) {
+    final iconMap = {
+      'Family': Icons.family_restroom_rounded,
+      'Career': Icons.business_center_rounded,
+      'Lifestyle': Icons.self_improvement_rounded,
+      'Ethics': Icons.balance_rounded,
+      'Fun': Icons.celebration_rounded,
+    };
+    final icon = iconMap[event.category] ?? Icons.event_rounded;
+
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (_) => EventDetailsScreen(event: event)),
+      ),
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              height: 150,
+              decoration: BoxDecoration(
+                gradient: JuiceTheme.primaryGradient,
+                borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(20)),
+              ),
+              child:
+                  Icon(icon, size: 60, color: Colors.white),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: JuiceTheme.primaryTangerine
+                              .withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          event.category,
+                          style: const TextStyle(
+                              color: JuiceTheme.primaryTangerine,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12),
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(event.date,
+                          style: const TextStyle(
+                              color: Colors.grey, fontSize: 12)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(event.title,
+                      style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Row(children: [
+                    const Icon(Icons.people_rounded,
+                        size: 16, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Text('${event.attendees} attending',
+                        style:
+                            const TextStyle(color: Colors.grey)),
+                  ]),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
     {
       'title': 'Family First Picnic',
       'category': 'Family',
