@@ -1,3 +1,9 @@
 {
-    "java.configuration.updateBuildConfiguration": "interactive"
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "chat.tools.terminal.autoApprove": {
+        "/^find /home/error51/\\.pub-cache/hosted/pub\\.dev/iris_method_channel-2\\.2\\.4/android/\\.cxx -name \"CMakeCXXCompiler\\.cmake\" 2>/dev/null \\| head -1 \\| xargs cat 2>/dev/null \\| head -80$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
 }
