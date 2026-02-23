@@ -4,6 +4,7 @@ import '../core/utils/juice_engine.dart';
 class JuiceUser {
   final String uid;
   final String displayName;
+  final int age;
   final String? email;
   final String? photoUrl;
   final List<String> photos;
@@ -12,10 +13,13 @@ class JuiceUser {
   final JuiceProfile juiceProfile;
   final String juiceSummary;
   final bool isPremium;
+  final List<String> likedUids;
+  final List<String> passedUids;
 
   JuiceUser({
     required this.uid,
     required this.displayName,
+    this.age = 25,
     this.email,
     this.photoUrl,
     required this.photos,
@@ -24,11 +28,14 @@ class JuiceUser {
     required this.juiceProfile,
     required this.juiceSummary,
     this.isPremium = false,
+    this.likedUids = const [],
+    this.passedUids = const [],
   });
 
   Map<String, dynamic> toJson() => {
         'uid': uid,
         'displayName': displayName,
+        'age': age,
         'email': email,
         'photoUrl': photoUrl,
         'photos': photos,
@@ -37,6 +44,8 @@ class JuiceUser {
         'juiceProfile': juiceProfile.toJson(),
         'juiceSummary': juiceSummary,
         'isPremium': isPremium,
+        'likedUids': likedUids,
+        'passedUids': passedUids,
       };
 
   factory JuiceUser.fromFirestore(DocumentSnapshot doc) {
@@ -44,6 +53,7 @@ class JuiceUser {
     return JuiceUser(
       uid: doc.id,
       displayName: data['displayName'] ?? '',
+      age: (data['age'] as num?)?.toInt() ?? 25,
       email: data['email'],
       photoUrl: data['photoUrl'],
       photos: List<String>.from(data['photos'] ?? []),
@@ -52,6 +62,8 @@ class JuiceUser {
       juiceProfile: JuiceProfile.fromJson(data['juiceProfile'] ?? {}),
       juiceSummary: data['juiceSummary'] ?? '',
       isPremium: data['isPremium'] ?? false,
+      likedUids: List<String>.from(data['likedUids'] ?? []),
+      passedUids: List<String>.from(data['passedUids'] ?? []),
     );
   }
 }
@@ -59,26 +71,46 @@ class JuiceUser {
 class JuiceMatch {
   final String matchId;
   final List<String> users;
+  final Map<String, String> userNames;
+  final Map<String, String?> userPhotos;
   final double sparksScore;
   final int tier;
+  final String lastMessage;
   final DateTime lastMessageTime;
 
   JuiceMatch({
     required this.matchId,
     required this.users,
+    required this.userNames,
+    required this.userPhotos,
     required this.sparksScore,
     required this.tier,
+    this.lastMessage = '',
     required this.lastMessageTime,
   });
 
+  String getPartnerUid(String myUid) =>
+      users.firstWhere((u) => u != myUid, orElse: () => users.first);
+
+  String getPartnerName(String myUid) =>
+      userNames[getPartnerUid(myUid)] ?? 'Unknown';
+
+  String? getPartnerPhoto(String myUid) => userPhotos[getPartnerUid(myUid)];
+
   factory JuiceMatch.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    final rawNames = Map<String, dynamic>.from(data['userNames'] ?? {});
+    final rawPhotos = Map<String, dynamic>.from(data['userPhotos'] ?? {});
     return JuiceMatch(
       matchId: doc.id,
       users: List<String>.from(data['users'] ?? []),
+      userNames: rawNames.map((k, v) => MapEntry(k, v?.toString() ?? '')),
+      userPhotos: rawPhotos.map((k, v) => MapEntry(k, v?.toString())),
       sparksScore: (data['sparksScore'] as num?)?.toDouble() ?? 0.0,
-      tier: data['tier'] ?? 1,
-      lastMessageTime: (data['lastMessageTime'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      tier: (data['tier'] as num?)?.toInt() ?? 1,
+      lastMessage: data['lastMessage'] ?? '',
+      lastMessageTime:
+          (data['lastMessageTime'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 }
@@ -103,8 +135,55 @@ class JuiceMessage {
       senderId: data['senderId'] ?? '',
       text: data['text'] ?? '',
       voiceUrl: data['voiceUrl'],
-      tierUnlocked: data['tierUnlocked'] ?? 1,
-      timestamp: (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      tierUnlocked: (data['tierUnlocked'] as num?)?.toInt() ?? 1,
+      timestamp:
+          (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+}
+
+class JuiceEvent {
+  final String id;
+  final String title;
+  final String category;
+  final String date;
+  final int attendees;
+  final List<String> attendeeUids;
+  final String description;
+  final String location;
+
+  JuiceEvent({
+    required this.id,
+    required this.title,
+    required this.category,
+    required this.date,
+    required this.attendees,
+    this.attendeeUids = const [],
+    this.description = '',
+    this.location = 'Kampala, Uganda',
+  });
+
+  Map<String, dynamic> toJson() => {
+        'title': title,
+        'category': category,
+        'date': date,
+        'attendees': attendees,
+        'attendeeUids': attendeeUids,
+        'description': description,
+        'location': location,
+      };
+
+  factory JuiceEvent.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return JuiceEvent(
+      id: doc.id,
+      title: data['title'] ?? '',
+      category: data['category'] ?? '',
+      date: data['date'] ?? '',
+      attendees: (data['attendees'] as num?)?.toInt() ?? 0,
+      attendeeUids: List<String>.from(data['attendeeUids'] ?? []),
+      description: data['description'] ?? '',
+      location: data['location'] ?? 'Kampala, Uganda',
     );
   }
 }
