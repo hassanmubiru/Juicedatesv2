@@ -145,22 +145,43 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.location_on_rounded, color: JuiceTheme.primaryTangerine),
-              title: const Text('Detect City (One-time)'),
-              subtitle: const Text('Kampala, Uganda'),
-              trailing: const Icon(Icons.refresh_rounded),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: Colors.grey[300]!),
+            TextField(
+              controller: _cityController,
+              decoration: InputDecoration(
+                labelText: 'City',
+                prefixIcon: const Icon(Icons.location_on_rounded,
+                    color: JuiceTheme.primaryTangerine),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Your age',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _ageController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Age',
+                prefixIcon: const Icon(Icons.cake_rounded,
+                    color: JuiceTheme.primaryTangerine),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
             const SizedBox(height: 48),
-            JuiceButton(
-              onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
-              text: 'Save & Continue',
-              isGradient: true,
-            ),
+            _saving
+                ? const Center(child: CircularProgressIndicator())
+                : JuiceButton(
+                    onPressed: _saveProfile,
+                    text: 'Save & Continue',
+                    isGradient: true,
+                  ),
           ],
         ),
       ),
