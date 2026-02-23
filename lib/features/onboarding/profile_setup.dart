@@ -1,9 +1,85 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../core/network/firestore_service.dart';
+import '../../core/utils/juice_engine.dart';
+import '../../models/user_models.dart';
 import '../../widgets/juice_button.dart';
 import '../../core/theme/juice_theme.dart';
 
-class ProfileSetupScreen extends StatelessWidget {
+class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
+
+  @override
+  State<ProfileSetupScreen> createState() => _ProfileSetupScreenState();
+}
+
+class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
+  final _service = FirestoreService();
+  final _cityController = TextEditingController(text: 'Kampala');
+  final _ageController = TextEditingController(text: '25');
+  bool _saving = false;
+
+  Future<void> _saveProfile() async {
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser == null) {
+      Navigator.pushReplacementNamed(context, '/login');
+      return;
+    }
+
+    final profile =
+        ModalRoute.of(context)?.settings.arguments as JuiceProfile? ??
+            JuiceProfile(
+                family: 0.5,
+                career: 0.5,
+                lifestyle: 0.5,
+                ethics: 0.5,
+                fun: 0.5);
+
+    final scores = {
+      'Family': profile.family,
+      'Career': profile.career,
+      'Lifestyle': profile.lifestyle,
+      'Ethics': profile.ethics,
+      'Fun': profile.fun,
+    };
+    final dominant =
+        scores.entries.reduce((a, b) => a.value >= b.value ? a : b);
+    final summary = '${dominant.key} Juice Master '
+        '(${(scores.values.reduce((a, b) => a + b) / scores.length * 100).round()}%)';
+
+    setState(() => _saving = true);
+    try {
+      final juiceUser = JuiceUser(
+        uid: firebaseUser.uid,
+        displayName: firebaseUser.displayName ?? 'JuiceUser',
+        age: int.tryParse(_ageController.text.trim()) ?? 25,
+        email: firebaseUser.email,
+        photoUrl: firebaseUser.photoURL,
+        photos: [],
+        city: _cityController.text.trim(),
+        juiceProfile: profile,
+        juiceSummary: summary,
+      );
+      await _service.createUser(juiceUser);
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/home');
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save profile: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _cityController.dispose();
+    _ageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
