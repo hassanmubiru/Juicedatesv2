@@ -64,6 +64,16 @@ class JuiceEngine {
     return profile;
   }
 
+  /// Simple symmetric similarity score used when creating a mutual match.
+  static double computeSparks(JuiceProfile a, JuiceProfile b) {
+    final diff = (a.family - b.family).abs() +
+        (a.career - b.career).abs() +
+        (a.lifestyle - b.lifestyle).abs() +
+        (a.ethics - b.ethics).abs() +
+        (a.fun - b.fun).abs();
+    return ((1 - diff / 5) * 100).clamp(0.0, 100.0);
+  }
+
   static double sparksPotential(JuiceProfile a, JuiceProfile b, {bool hasVoice = false, double momentum = 0.5}) {
     // 85pt algorithm: 40% values (5 categories) + 20% voice + 15% momentum + 10% lifestyle
 
