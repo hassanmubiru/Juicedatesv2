@@ -1,9 +1,22 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../../models/user_models.dart';
 import '../utils/juice_engine.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+
+  /// Uploads a photo to Firebase Storage and returns the download URL.
+  Future<String> uploadPhoto(String uid, File file, int index) async {
+    final ref = _storage.ref('users/$uid/photos/photo_$index.jpg');
+    final task = await ref.putFile(
+      file,
+      SettableMetadata(contentType: 'image/jpeg'),
+    );
+    return await task.ref.getDownloadURL();
+  }
 
   // ── Users ─────────────────────────────────────────────────────────────────
 
