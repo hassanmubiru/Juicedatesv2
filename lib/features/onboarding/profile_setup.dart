@@ -21,7 +21,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final _ageController = TextEditingController(text: '25');
   final _picker = ImagePicker();
   final List<File?> _photos = List.filled(6, null);
-  final List<String> _photoUrls = [];
   bool _saving = false;
 
   Future<void> _pickPhoto(int index) async {
