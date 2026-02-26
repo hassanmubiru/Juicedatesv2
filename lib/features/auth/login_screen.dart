@@ -19,10 +19,10 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _signInWithGoogle() async {
     setState(() => _loading = true);
     try {
-      final googleUser = await GoogleSignIn(
-        serverClientId:
-            '408134384062-lmpotnn8c3n1frccsgqm1f6p7qpdu4vu.apps.googleusercontent.com',
-      ).signIn();
+      final gsi = GoogleSignIn(
+        scopes: ['email'],
+      );
+      final googleUser = await gsi.signIn();
       if (googleUser == null) {
         setState(() => _loading = false);
         return;
@@ -43,7 +43,9 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         Navigator.pushReplacementNamed(context, '/home');
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('Google Sign-In error: $e');
+      debugPrint('Stack trace: $st');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Sign-in failed: $e')),
