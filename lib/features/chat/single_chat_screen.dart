@@ -275,3 +275,52 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
     );
   }
 }
+
+class _ReportDialog extends StatefulWidget {
+  final String name;
+  const _ReportDialog({required this.name});
+
+  @override
+  State<_ReportDialog> createState() => _ReportDialogState();
+}
+
+class _ReportDialogState extends State<_ReportDialog> {
+  String? _selected;
+  static const _reasons = [
+    'Inappropriate content',
+    'Fake profile',
+    'Harassment',
+    'Spam',
+    'Other',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Report \${widget.name}'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: _reasons
+            .map((r) => RadioListTile<String>(
+                  value: r,
+                  groupValue: _selected,
+                  title: Text(r),
+                  onChanged: (v) => setState(() => _selected = v),
+                ))
+            .toList(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: _selected == null
+              ? null
+              : () => Navigator.pop(context, _selected),
+          child: const Text('Submit'),
+        ),
+      ],
+    );
+  }
+}
