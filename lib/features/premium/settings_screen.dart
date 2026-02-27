@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../blocs/auth_bloc.dart';
+import '../../core/network/firestore_service.dart';
 import '../../core/theme/juice_theme.dart';
 import '../../../main.dart' show themeModeNotifier;
 
@@ -14,11 +16,22 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isDark = false;
+  bool _isAdmin = false;
 
   @override
   void initState() {
     super.initState();
     _isDark = themeModeNotifier.value == ThemeMode.dark;
+    _loadAdminStatus();
+  }
+
+  Future<void> _loadAdminStatus() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    final user = await FirestoreService().getUserOnce(uid);
+    if (mounted && user != null) {
+      setState(() => _isAdmin = user.isAdmin);
+    }
   }
 
   Future<void> _toggleDark(bool val) async {
@@ -80,6 +93,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: const Text('New Sparks'),
             secondary: const Icon(Icons.flash_on_rounded),
           ),
+          const SizedBox(height: 12),
+          if (_isAdmin) ..[
+            const _SectionHeader(title: 'Admin'),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  gradient: JuiceTheme.primaryGradient,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.admin_panel_settings_rounded,
+                    color: Colors.white, size: 20),
+              ),
+              title: const Text('Admin Panel',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: const Text('Manage users, reports & events'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.pushNamed(context, '/admin'),
+            ),
+          ],
           const SizedBox(height: 48),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
