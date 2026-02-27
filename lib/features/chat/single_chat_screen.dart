@@ -168,8 +168,8 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
                 ),
               ],
             ),
-      ),
-      bottom: PreferredSize(
+        ],
+        bottom: PreferredSize(
           preferredSize: const Size.fromHeight(40),
           child: TierMeter(tier: _currentTier, progression: _progression),
         ),
