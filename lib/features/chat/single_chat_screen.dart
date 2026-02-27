@@ -36,6 +36,19 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
   void initState() {
     super.initState();
     _myUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    _loadMatchState();
+  }
+
+  /// Load persisted tier + message count so chat state survives reopens.
+  Future<void> _loadMatchState() async {
+    final match = await _service.getMatchOnce(widget.matchId);
+    if (match != null && mounted) {
+      setState(() {
+        _currentTier = match.tier;
+        _messageCount = match.messageCount;
+        _progression = (_messageCount % 10) / 10.0;
+      });
+    }
   }
 
   void _scrollToBottom() {
@@ -114,8 +127,12 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
         final newTier = (_currentTier % 4) + 1;
         if (newTier > _currentTier) {
           _currentTier = newTier;
-          _service.updateMatchTier(widget.matchId, _currentTier);
+          _service.updateMatchTier(widget.matchId, _currentTier, _messageCount);
+        } else {
+          _service.updateMatchTier(widget.matchId, _currentTier, _messageCount);
         }
+      } else {
+        _service.updateMatchTier(widget.matchId, _currentTier, _messageCount);
       }
     });
   }
