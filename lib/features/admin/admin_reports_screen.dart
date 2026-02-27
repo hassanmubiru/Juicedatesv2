@@ -36,15 +36,21 @@ class AdminReportsScreen extends StatelessWidget {
           );
         }
 
-        return ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: reports.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 8),
-          itemBuilder: (context, index) {
-            final report = reports[index];
-            return _ReportCard(report: report, service: service);
-          },
-        );
+        return LayoutBuilder(builder: (context, constraints) {
+          final isWide = constraints.maxWidth >= 700;
+          if (isWide) {
+            return _ReportsTable(reports: reports, service: service);
+          }
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: reports.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (context, index) {
+              final report = reports[index];
+              return _ReportCard(report: report, service: service);
+            },
+          );
+        });
       },
     );
   }
@@ -177,6 +183,125 @@ class _ReportCard extends StatelessWidget {
     if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
     if (diff.inHours < 24) return '${diff.inHours}h ago';
     return '${diff.inDays}d ago';
+  }
+}
+
+class _ReportsTable extends StatelessWidget {
+  final List<JuiceReport> reports;
+  final FirestoreService service;
+  const _ReportsTable({required this.reports, required this.service});
+
+  @override
+  Widget build(BuildContext context) {
+    String timeAgo(DateTime dt) {
+      final diff = DateTime.now().difference(dt);
+      if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+      if (diff.inHours < 24) return '${diff.inHours}h ago';
+      return '${diff.inDays}d ago';
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          headingRowColor: WidgetStateProperty.all(
+              Theme.of(context).colorScheme.surfaceContainerHighest),
+          border: TableBorder.all(
+              color: Colors.grey.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(8)),
+          columns: const [
+            DataColumn(label: Text('Status')),
+            DataColumn(label: Text('Reporter')),
+            DataColumn(label: Text('Reported')),
+            DataColumn(label: Text('Reason')),
+            DataColumn(label: Text('Time')),
+            DataColumn(label: Text('Actions')),
+          ],
+          rows: reports.map((r) {
+            return DataRow(
+              color: r.resolved
+                  ? WidgetStateProperty.all(
+                      Colors.green.withValues(alpha: 0.04))
+                  : null,
+              cells: [
+                DataCell(Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: r.resolved ? Colors.green[50] : Colors.orange[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                        color: r.resolved ? Colors.green : Colors.orange),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(
+                      r.resolved
+                          ? Icons.check_circle_outlined
+                          : Icons.pending_outlined,
+                      size: 14,
+                      color: r.resolved ? Colors.green : Colors.orange,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      r.resolved ? 'Resolved' : 'Pending',
+                      style: TextStyle(
+                        color: r.resolved ? Colors.green : Colors.orange,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ]),
+                )),
+                DataCell(Text(
+                  r.reporterUid.length > 8
+                      ? '${r.reporterUid.substring(0, 8)}…'
+                      : r.reporterUid,
+                  style: const TextStyle(
+                      fontFamily: 'monospace', fontSize: 12),
+                )),
+                DataCell(Text(
+                  r.reportedUid.length > 8
+                      ? '${r.reportedUid.substring(0, 8)}…'
+                      : r.reportedUid,
+                  style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                      color: Colors.red),
+                )),
+                DataCell(ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 260),
+                  child: Text(r.reason,
+                      overflow: TextOverflow.ellipsis, maxLines: 2),
+                )),
+                DataCell(Text(timeAgo(r.timestamp),
+                    style: const TextStyle(color: Colors.grey))),
+                DataCell(r.resolved
+                    ? const Text('—',
+                        style: TextStyle(color: Colors.grey))
+                    : Row(mainAxisSize: MainAxisSize.min, children: [
+                        OutlinedButton(
+                          onPressed: () => service.banUser(r.reportedUid),
+                          style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.orange,
+                              visualDensity: VisualDensity.compact),
+                          child: const Text('Ban'),
+                        ),
+                        const SizedBox(width: 6),
+                        FilledButton(
+                          onPressed: () => service.resolveReport(r.id),
+                          style: FilledButton.styleFrom(
+                              backgroundColor: JuiceTheme.juiceGreen,
+                              visualDensity: VisualDensity.compact),
+                          child: const Text('Resolve'),
+                        ),
+                      ])),
+              ],
+            );
+          }).toList(),
+        ),
+      ),
+    );
   }
 }
 

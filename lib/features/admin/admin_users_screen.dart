@@ -148,7 +148,176 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   }
 }
 
-class _Badge extends StatelessWidget {  final String label;
+// ── Mobile list tile ──────────────────────────────────────────────────────
+class _UserListTile extends StatelessWidget {
+  final JuiceUser user;
+  final Future<void> Function(String, JuiceUser) onAction;
+  const _UserListTile({required this.user, required this.onAction});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      leading: CircleAvatar(
+        radius: 24,
+        backgroundColor: user.isBanned
+            ? Colors.red[100]
+            : JuiceTheme.primaryTangerine.withValues(alpha: 0.15),
+        backgroundImage:
+            user.photoUrl != null && user.photoUrl!.isNotEmpty
+                ? NetworkImage(user.photoUrl!)
+                : null,
+        child: user.photoUrl == null || user.photoUrl!.isEmpty
+            ? Text(
+                user.displayName.isNotEmpty
+                    ? user.displayName[0].toUpperCase()
+                    : '?',
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: user.isBanned
+                        ? Colors.red
+                        : JuiceTheme.primaryTangerine),
+              )
+            : null,
+      ),
+      title: Row(children: [
+        Flexible(
+          child: Text(user.displayName,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+              overflow: TextOverflow.ellipsis),
+        ),
+        if (user.isAdmin) ...[const SizedBox(width: 6), _Badge('Admin', Colors.purple)],
+        if (user.isPremium) ...[const SizedBox(width: 4), _Badge('Plus+', JuiceTheme.primaryTangerine)],
+        if (user.isBanned) ...[const SizedBox(width: 4), _Badge('Banned', Colors.red)],
+      ]),
+      subtitle: Text(
+        '${user.city} · ${user.age}y · ${user.email ?? 'no email'}',
+        style: const TextStyle(fontSize: 12),
+        overflow: TextOverflow.ellipsis,
+      ),
+      trailing: _ActionMenu(user: user, onAction: onAction),
+    );
+  }
+}
+
+// ── Web DataTable ─────────────────────────────────────────────────────────
+class _UsersDataTable extends StatelessWidget {
+  final List<JuiceUser> users;
+  final Future<void> Function(String, JuiceUser) onAction;
+  const _UsersDataTable({required this.users, required this.onAction});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          headingRowColor: WidgetStateProperty.all(
+              Theme.of(context).colorScheme.surfaceContainerHighest),
+          border: TableBorder.all(
+              color: Colors.grey.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(8)),
+          columns: const [
+            DataColumn(label: Text('Avatar')),
+            DataColumn(label: Text('Name')),
+            DataColumn(label: Text('Email')),
+            DataColumn(label: Text('City')),
+            DataColumn(label: Text('Age')),
+            DataColumn(label: Text('Status')),
+            DataColumn(label: Text('Actions')),
+          ],
+          rows: users.map((user) {
+            return DataRow(
+              color: user.isBanned
+                  ? WidgetStateProperty.all(Colors.red.withValues(alpha: 0.05))
+                  : null,
+              cells: [
+                DataCell(CircleAvatar(
+                  radius: 18,
+                  backgroundImage:
+                      user.photoUrl != null && user.photoUrl!.isNotEmpty
+                          ? NetworkImage(user.photoUrl!)
+                          : null,
+                  backgroundColor:
+                      JuiceTheme.primaryTangerine.withValues(alpha: 0.15),
+                  child: user.photoUrl == null || user.photoUrl!.isEmpty
+                      ? Text(
+                          user.displayName.isNotEmpty
+                              ? user.displayName[0].toUpperCase()
+                              : '?',
+                          style: const TextStyle(fontSize: 12))
+                      : null,
+                )),
+                DataCell(Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text(user.displayName,
+                      style:
+                          const TextStyle(fontWeight: FontWeight.w600)),
+                  if (user.isAdmin) ...[
+                    const SizedBox(width: 6),
+                    _Badge('Admin', Colors.purple)
+                  ],
+                  if (user.isPremium) ...[
+                    const SizedBox(width: 4),
+                    _Badge('Plus+', JuiceTheme.primaryTangerine)
+                  ],
+                ])),
+                DataCell(Text(user.email ?? '—',
+                    style: const TextStyle(fontSize: 13))),
+                DataCell(Text(user.city)),
+                DataCell(Text('${user.age}')),
+                DataCell(user.isBanned
+                    ? _Badge('Banned', Colors.red)
+                    : _Badge('Active', Colors.green)),
+                DataCell(_ActionMenu(user: user, onAction: onAction)),
+              ],
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Shared pop-up action menu ─────────────────────────────────────────────
+class _ActionMenu extends StatelessWidget {
+  final JuiceUser user;
+  final Future<void> Function(String, JuiceUser) onAction;
+  const _ActionMenu({required this.user, required this.onAction});
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_vert_rounded),
+      onSelected: (action) => onAction(action, user),
+      itemBuilder: (_) => [
+        PopupMenuItem(
+          value: 'view',
+          child: _MenuItem(Icons.info_outline_rounded, 'View Profile'),
+        ),
+        PopupMenuItem(
+          value: user.isBanned ? 'unban' : 'ban',
+          child: _MenuItem(
+            user.isBanned
+                ? Icons.check_circle_outline_rounded
+                : Icons.block_rounded,
+            user.isBanned ? 'Unban User' : 'Ban User',
+            color: user.isBanned ? Colors.green : Colors.orange,
+          ),
+        ),
+        PopupMenuItem(
+          value: 'delete',
+          child: _MenuItem(Icons.delete_outline_rounded, 'Delete Account',
+              color: Colors.red),
+        ),
+      ],
+    );
+  }
+}
+
+class _Badge extends StatelessWidget {
+  final String label;
   final Color color;
   const _Badge(this.label, this.color);
 
