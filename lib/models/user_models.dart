@@ -19,6 +19,8 @@ class JuiceUser {
   final String? bio;
   final List<String> interests;
   final String? fcmToken;
+  final bool isAdmin;
+  final bool isBanned;
 
   JuiceUser({
     required this.uid,
@@ -38,6 +40,8 @@ class JuiceUser {
     this.bio,
     this.interests = const [],
     this.fcmToken,
+    this.isAdmin = false,
+    this.isBanned = false,
   });
 
   Map<String, dynamic> toJson() => {
@@ -58,6 +62,8 @@ class JuiceUser {
         'bio': bio,
         'interests': interests,
         'fcmToken': fcmToken,
+        'isAdmin': isAdmin,
+        'isBanned': isBanned,
       };
 
   factory JuiceUser.fromFirestore(DocumentSnapshot doc) {
@@ -80,6 +86,8 @@ class JuiceUser {
       bio: data['bio'],
       interests: List<String>.from(data['interests'] ?? []),
       fcmToken: data['fcmToken'],
+      isAdmin: data['isAdmin'] ?? false,
+      isBanned: data['isBanned'] ?? false,
     );
   }
 }
@@ -200,6 +208,36 @@ class JuiceEvent {
       attendeeUids: List<String>.from(data['attendeeUids'] ?? []),
       description: data['description'] ?? '',
       location: data['location'] ?? 'Kampala, Uganda',
+    );
+  }
+}
+
+class JuiceReport {
+  final String id;
+  final String reporterUid;
+  final String reportedUid;
+  final String reason;
+  final DateTime timestamp;
+  final bool resolved;
+
+  JuiceReport({
+    required this.id,
+    required this.reporterUid,
+    required this.reportedUid,
+    required this.reason,
+    required this.timestamp,
+    this.resolved = false,
+  });
+
+  factory JuiceReport.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return JuiceReport(
+      id: doc.id,
+      reporterUid: data['reporterUid'] ?? '',
+      reportedUid: data['reportedUid'] ?? '',
+      reason: data['reason'] ?? '',
+      timestamp: (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      resolved: data['resolved'] ?? false,
     );
   }
 }

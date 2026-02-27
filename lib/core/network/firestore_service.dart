@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../../models/user_models.dart';
 import '../utils/juice_engine.dart';
@@ -201,6 +202,76 @@ class FirestoreService {
     await _db.collection('events').doc(eventId).update({
       'attendeeUids': FieldValue.arrayRemove([uid]),
       'attendees': FieldValue.increment(-1),
+    });
+  }
+
+  // ── Admin ─────────────────────────────────────────────────────────────────
+
+  Future<Map<String, int>> getAdminStats() async {
+    final results = await Future.wait([
+      _db.collection('users').count().get(),
+      _db.collection('matches').count().get(),
+      _db.collection('reports').where('resolved', isEqualTo: false).count().get(),
+      _db.collection('events').count().get(),
+    ]);
+    return {
+      'users': results[0].count ?? 0,
+      'matches': results[1].count ?? 0,
+      'reports': results[2].count ?? 0,
+      'events': results[3].count ?? 0,
+    };
+  }
+
+  Stream<List<JuiceUser>> getAllUsers() {
+    return _db
+        .collection('users')
+        .orderBy('displayName')
+        .snapshots()
+        .map((s) => s.docs.map((d) => JuiceUser.fromFirestore(d)).toList());
+  }
+
+  Future<void> banUser(String uid) async {
+    await _db.collection('users').doc(uid).update({'isBanned': true});
+  }
+
+  Future<void> unbanUser(String uid) async {
+    await _db.collection('users').doc(uid).update({'isBanned': false});
+  }
+
+  Future<void> deleteUserAccount(String uid) async {
+    await _db.collection('users').doc(uid).delete();
+  }
+
+  Stream<List<JuiceReport>> getAllReports() {
+    return _db
+        .collection('reports')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((s) => s.docs.map((d) => JuiceReport.fromFirestore(d)).toList());
+  }
+
+  Future<void> resolveReport(String reportId) async {
+    await _db.collection('reports').doc(reportId).update({'resolved': true});
+  }
+
+  Future<void> createEvent(JuiceEvent event) async {
+    await _db.collection('events').add(event.toJson());
+  }
+
+  Future<void> updateEvent(String id, Map<String, dynamic> data) async {
+    await _db.collection('events').doc(id).update(data);
+  }
+
+  Future<void> deleteEvent(String id) async {
+    await _db.collection('events').doc(id).delete();
+  }
+
+  Future<void> sendAnnouncement(String title, String body) async {
+    await _db.collection('announcements').add({
+      'title': title,
+      'body': body,
+      'timestamp': FieldValue.serverTimestamp(),
+      'sentBy': FirebaseAuth.instance.currentUser?.uid,
     });
   }
 }
