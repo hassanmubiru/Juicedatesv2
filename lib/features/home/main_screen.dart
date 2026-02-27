@@ -3,6 +3,7 @@ import 'package:juicedates/features/home/juice_feed_screen.dart';
 import 'package:juicedates/features/matches/matches_list_screen.dart';
 import 'package:juicedates/features/chat/chat_list_screen.dart';
 import 'package:juicedates/features/events/juice_tribes_screen.dart';
+import 'package:juicedates/features/premium/settings_screen.dart';
 import 'package:juicedates/core/theme/juice_theme.dart';
 
 class MainScreen extends StatefulWidget {
@@ -20,6 +21,7 @@ class _MainScreenState extends State<MainScreen> {
     const MatchesListScreen(),
     const ChatListScreen(),
     const JuiceTribesScreen(),
+    const SettingsScreen(),
   ];
 
   @override
@@ -53,6 +55,11 @@ class _MainScreenState extends State<MainScreen> {
             icon: Icon(Icons.groups_outlined),
             selectedIcon: Icon(Icons.groups_rounded, color: JuiceTheme.primaryTangerine),
             label: 'Tribes',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline_rounded),
+            selectedIcon: Icon(Icons.person_rounded, color: JuiceTheme.primaryTangerine),
+            label: 'Profile',
           ),
         ],
       ),

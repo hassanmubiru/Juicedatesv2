@@ -10,11 +10,13 @@ import '../calling/audio_call_screen.dart';
 class SingleChatScreen extends StatefulWidget {
   final String name;
   final String matchId;
+  final String? partnerUid;
 
   const SingleChatScreen({
     super.key,
     required this.name,
     required this.matchId,
+    this.partnerUid,
   });
 
   @override
@@ -46,6 +48,48 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
         );
       }
     });
+  }
+
+  Future<void> _handleMenuAction(String action) async {
+    if (widget.partnerUid == null) return;
+    if (action == 'report') {
+      final reason = await showDialog<String>(
+        context: context,
+        builder: (_) => _ReportDialog(name: widget.name),
+      );
+      if (reason != null && reason.isNotEmpty) {
+        await _service.reportUser(_myUid, widget.partnerUid!, reason);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Report submitted. Thank you.')),
+          );
+        }
+      }
+    } else if (action == 'block') {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text('Block ${widget.name}?'),
+          content: const Text('They will no longer be able to message you or appear in your feed.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Block', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        ),
+      );
+      if (confirm == true) {
+        await _service.blockUser(_myUid, widget.partnerUid!);
+        if (mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${widget.name} has been blocked.')),
+          );
+        }
+      }
+    }
   }
 
   void _sendMessage() {
@@ -113,8 +157,19 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
               MaterialPageRoute(builder: (_) => const AudioCallScreen()),
             ),
           ),
-        ],
-        bottom: PreferredSize(
+          if (widget.partnerUid != null)
+            PopupMenuButton<String>(
+              onSelected: (val) => _handleMenuAction(val),
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'report', child: Text('Report User')),
+                PopupMenuItem(
+                  value: 'block',
+                  child: Text('Block User', style: TextStyle(color: Colors.red)),
+                ),
+              ],
+            ),
+      ),
+      bottom: PreferredSize(
           preferredSize: const Size.fromHeight(40),
           child: TierMeter(tier: _currentTier, progression: _progression),
         ),

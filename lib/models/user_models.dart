@@ -15,6 +15,10 @@ class JuiceUser {
   final bool isPremium;
   final List<String> likedUids;
   final List<String> passedUids;
+  final List<String> blockedUids;
+  final String? bio;
+  final List<String> interests;
+  final String? fcmToken;
 
   JuiceUser({
     required this.uid,
@@ -30,6 +34,10 @@ class JuiceUser {
     this.isPremium = false,
     this.likedUids = const [],
     this.passedUids = const [],
+    this.blockedUids = const [],
+    this.bio,
+    this.interests = const [],
+    this.fcmToken,
   });
 
   Map<String, dynamic> toJson() => {
@@ -46,6 +54,10 @@ class JuiceUser {
         'isPremium': isPremium,
         'likedUids': likedUids,
         'passedUids': passedUids,
+        'blockedUids': blockedUids,
+        'bio': bio,
+        'interests': interests,
+        'fcmToken': fcmToken,
       };
 
   factory JuiceUser.fromFirestore(DocumentSnapshot doc) {
@@ -64,6 +76,10 @@ class JuiceUser {
       isPremium: data['isPremium'] ?? false,
       likedUids: List<String>.from(data['likedUids'] ?? []),
       passedUids: List<String>.from(data['passedUids'] ?? []),
+      blockedUids: List<String>.from(data['blockedUids'] ?? []),
+      bio: data['bio'],
+      interests: List<String>.from(data['interests'] ?? []),
+      fcmToken: data['fcmToken'],
     );
   }
 }

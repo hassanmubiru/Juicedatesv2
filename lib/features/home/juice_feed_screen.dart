@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import '../../core/network/firestore_service.dart';
+import '../../core/utils/juice_engine.dart';
 import '../../models/user_models.dart';
 import '../../widgets/juice_card.dart';
 
@@ -133,13 +134,10 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
           padding: const EdgeInsets.all(24.0),
           cardBuilder: (context, index, hOff, vOff) {
             final user = _feedUsers[index];
-            return JuiceCard(user: {
-              'name': user.displayName,
-              'age': user.age,
-              'city': user.city,
-              'summary': user.juiceSummary,
-              'sparks': user.juiceProfile.family * 100,
-            });
+            final sparks = _currentUser != null
+                ? JuiceEngine.computeSparks(_currentUser!.juiceProfile, user.juiceProfile)
+                : 0.0;
+            return JuiceCard(user: user, sparksScore: sparks);
           },
           onSwipe: _onSwipe,
           onEnd: () => setState(() => _feedUsers = []),

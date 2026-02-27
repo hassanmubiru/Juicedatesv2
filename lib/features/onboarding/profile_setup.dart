@@ -8,6 +8,13 @@ import '../../models/user_models.dart';
 import '../../widgets/juice_button.dart';
 import '../../core/theme/juice_theme.dart';
 
+const List<String> _kInterests = [
+  'Hiking', 'Reading', 'Cooking', 'Travel', 'Gaming', 'Music',
+  'Art', 'Fitness', 'Photography', 'Movies', 'Dancing', 'Yoga',
+  'Tech', 'Entrepreneurship', 'Family', 'Faith', 'Volunteering',
+  'Fashion', 'Sports', 'Coffee', 'Pets', 'Nature',
+];
+
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
 
@@ -21,6 +28,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final _ageController = TextEditingController(text: '25');
   final _picker = ImagePicker();
   final List<File?> _photos = List.filled(6, null);
+  final List<String> _selectedInterests = [];
   bool _saving = false;
 
   Future<void> _pickPhoto(int index) async {
@@ -109,6 +117,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         city: _cityController.text.trim(),
         juiceProfile: profile,
         juiceSummary: summary,
+        bio: '',
+        interests: _selectedInterests,
       );
       await _service.createUser(juiceUser);
       if (!mounted) return;
@@ -248,6 +258,37 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
+            ),
+            const SizedBox(height: 48),
+            const Text('Your Interests',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            const Text('Pick up to 8 that best describe you',
+                style: TextStyle(color: Colors.grey)),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _kInterests.map((interest) {
+                final selected = _selectedInterests.contains(interest);
+                return FilterChip(
+                  label: Text(interest),
+                  selected: selected,
+                  selectedColor:
+                      JuiceTheme.primaryTangerine.withValues(alpha: 0.2),
+                  checkmarkColor: JuiceTheme.primaryTangerine,
+                  onSelected: (val) {
+                    setState(() {
+                      if (val) {
+                        if (_selectedInterests.length < 8)
+                          _selectedInterests.add(interest);
+                      } else {
+                        _selectedInterests.remove(interest);
+                      }
+                    });
+                  },
+                );
+              }).toList(),
             ),
             const SizedBox(height: 48),
             _saving

@@ -1,10 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../blocs/auth_bloc.dart';
 import '../../core/theme/juice_theme.dart';
+import '../../../main.dart' show themeModeNotifier;
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  bool _isDark = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _isDark = themeModeNotifier.value == ThemeMode.dark;
+  }
+
+  Future<void> _toggleDark(bool val) async {
+    setState(() => _isDark = val);
+    themeModeNotifier.value = val ? ThemeMode.dark : ThemeMode.light;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('darkMode', val);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +38,8 @@ class SettingsScreen extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.person_outline),
             title: const Text('Edit Profile'),
-            onTap: () {},
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.pushNamed(context, '/edit-profile'),
           ),
           ListTile(
             leading: const Icon(Icons.verified_user_outlined),
@@ -33,6 +56,12 @@ class SettingsScreen extends StatelessWidget {
             onTap: () {},
           ),
           const _SectionHeader(title: 'Privacy & Safety'),
+          SwitchListTile(
+            value: _isDark,
+            onChanged: _toggleDark,
+            title: const Text('Dark Mode'),
+            secondary: const Icon(Icons.dark_mode_outlined),
+          ),
           SwitchListTile(
             value: true,
             onChanged: (v) {},

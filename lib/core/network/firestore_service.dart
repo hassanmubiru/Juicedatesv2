@@ -18,6 +18,25 @@ class FirestoreService {
     return await task.ref.getDownloadURL();
   }
 
+  Future<void> blockUser(String myUid, String blockedUid) async {
+    await _db.collection('users').doc(myUid).update({
+      'blockedUids': FieldValue.arrayUnion([blockedUid]),
+    });
+  }
+
+  Future<void> reportUser(String reporterUid, String reportedUid, String reason) async {
+    await _db.collection('reports').add({
+      'reporterUid': reporterUid,
+      'reportedUid': reportedUid,
+      'reason': reason,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> updateFcmToken(String uid, String token) async {
+    await _db.collection('users').doc(uid).update({'fcmToken': token});
+  }
+
   // ── Users ─────────────────────────────────────────────────────────────────
 
   Future<void> createUser(JuiceUser user) async {

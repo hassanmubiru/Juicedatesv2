@@ -85,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const Spacer(),
             JuiceButton(
-              onPressed: () => Navigator.pushNamed(context, '/quiz'),
+              onPressed: () => Navigator.pushNamed(context, '/email-auth'),
               text: 'Sign Up with Email',
               isGradient: true,
             ),

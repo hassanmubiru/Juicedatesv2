@@ -67,4 +67,52 @@ class JuiceTheme {
       ),
     );
   }
+
+  static ThemeData get darkTheme {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: primaryTangerine,
+        brightness: Brightness.dark,
+        primary: primaryTangerine,
+        secondary: secondaryCitrus,
+        tertiary: accentPeach,
+        surface: const Color(0xFF1E1E1E),
+        onPrimary: Colors.white,
+        onSecondary: Colors.white,
+      ),
+      scaffoldBackgroundColor: const Color(0xFF121212),
+      textTheme: const TextTheme(
+        headlineLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 32),
+        headlineMedium: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 24),
+        bodyLarge: TextStyle(color: Colors.white70, fontSize: 16),
+        bodyMedium: TextStyle(color: Colors.white60, fontSize: 14),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryTangerine,
+          foregroundColor: Colors.white,
+          elevation: 8,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+        ),
+      ),
+      cardTheme: CardThemeData(
+        elevation: 8,
+        color: const Color(0xFF1E1E1E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shadowColor: primaryTangerine.withValues(alpha: 0.2),
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Color(0xFF1E1E1E),
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      listTileTheme: const ListTileThemeData(
+        iconColor: Colors.white70,
+        textColor: Colors.white,
+      ),
+    );
+  }
 }
