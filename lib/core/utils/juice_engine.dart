@@ -22,11 +22,11 @@ class JuiceProfile {
       };
 
   factory JuiceProfile.fromJson(Map<String, dynamic> json) => JuiceProfile(
-        family: (json['family'] as num).toDouble(),
-        career: (json['career'] as num).toDouble(),
-        lifestyle: (json['lifestyle'] as num).toDouble(),
-        ethics: (json['ethics'] as num).toDouble(),
-        fun: (json['fun'] as num).toDouble(),
+        family: (json['family'] as num?)?.toDouble() ?? 0.5,
+        career: (json['career'] as num?)?.toDouble() ?? 0.5,
+        lifestyle: (json['lifestyle'] as num?)?.toDouble() ?? 0.5,
+        ethics: (json['ethics'] as num?)?.toDouble() ?? 0.5,
+        fun: (json['fun'] as num?)?.toDouble() ?? 0.5,
       );
 }
 

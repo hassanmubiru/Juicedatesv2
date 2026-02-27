@@ -99,6 +99,7 @@ class JuiceMatch {
   final Map<String, String?> userPhotos;
   final double sparksScore;
   final int tier;
+  final int messageCount;
   final String lastMessage;
   final DateTime lastMessageTime;
 
@@ -109,6 +110,7 @@ class JuiceMatch {
     required this.userPhotos,
     required this.sparksScore,
     required this.tier,
+    this.messageCount = 0,
     this.lastMessage = '',
     required this.lastMessageTime,
   });
@@ -132,6 +134,7 @@ class JuiceMatch {
       userPhotos: rawPhotos.map((k, v) => MapEntry(k, v?.toString())),
       sparksScore: (data['sparksScore'] as num?)?.toDouble() ?? 0.0,
       tier: (data['tier'] as num?)?.toInt() ?? 1,
+      messageCount: (data['messageCount'] as num?)?.toInt() ?? 0,
       lastMessage: data['lastMessage'] ?? '',
       lastMessageTime:
           (data['lastMessageTime'] as Timestamp?)?.toDate() ?? DateTime.now(),

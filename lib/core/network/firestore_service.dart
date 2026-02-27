@@ -30,6 +30,7 @@ class FirestoreService {
       'reporterUid': reporterUid,
       'reportedUid': reportedUid,
       'reason': reason,
+      'resolved': false,
       'timestamp': FieldValue.serverTimestamp(),
     });
   }
@@ -62,12 +63,16 @@ class FirestoreService {
     return JuiceUser.fromFirestore(doc);
   }
 
-  /// Returns all users except the current user, filtering out already-liked
-  /// and already-passed UIDs client-side.
+  /// Returns feed users, excluding:
+  ///  - the current user themselves
+  ///  - users already liked or passed
+  ///  - banned users
+  ///  - users who have blocked the current user
   Stream<List<JuiceUser>> getFeedUsers(String uid) {
     return _db
         .collection('users')
         .where('uid', isNotEqualTo: uid)
+        .where('isBanned', isEqualTo: false)
         .snapshots()
         .asyncMap((snapshot) async {
       final currentUserDoc = await _db.collection('users').doc(uid).get();
@@ -75,36 +80,55 @@ class FirestoreService {
       final excluded = <String>{
         ...currentUser.likedUids,
         ...currentUser.passedUids,
+        ...currentUser.blockedUids,
         uid,
       };
       return snapshot.docs
           .map((doc) => JuiceUser.fromFirestore(doc))
-          .where((u) => !excluded.contains(u.uid))
+          .where((u) {
+            // Exclude if they blocked me
+            if (u.blockedUids.contains(uid)) return false;
+            return !excluded.contains(u.uid);
+          })
           .toList();
     });
   }
 
   // ── Likes / Passes ────────────────────────────────────────────────────────
 
-  /// Records a like, then checks for a mutual match.
+  /// Records a like atomically; creates a match if mutual (no duplicate matches).
   /// Returns the created [JuiceMatch] if mutual, or null.
   Future<JuiceMatch?> likeUser(JuiceUser fromUser, JuiceUser toUser) async {
-    final batch = _db.batch();
-    batch.update(_db.collection('users').doc(fromUser.uid), {
-      'likedUids': FieldValue.arrayUnion([toUser.uid]),
-    });
-    await batch.commit();
+    bool isMutual = false;
 
-    final toUserDoc = await _db.collection('users').doc(toUser.uid).get();
-    final toUserFresh = JuiceUser.fromFirestore(toUserDoc);
-    if (toUserFresh.likedUids.contains(fromUser.uid)) {
-      final sparks = JuiceEngine.computeSparks(
-        fromUser.juiceProfile,
-        toUser.juiceProfile,
-      );
-      return await _createMatch(fromUser, toUser, sparks);
-    }
-    return null;
+    // Atomically record the like and check mutuality
+    await _db.runTransaction((txn) async {
+      final toDoc =
+          await txn.get(_db.collection('users').doc(toUser.uid));
+      final theirLikes =
+          List<String>.from(toDoc.data()?['likedUids'] ?? []);
+      isMutual = theirLikes.contains(fromUser.uid);
+      txn.update(_db.collection('users').doc(fromUser.uid), {
+        'likedUids': FieldValue.arrayUnion([toUser.uid]),
+      });
+    });
+
+    if (!isMutual) return null;
+
+    // Guard: check whether a match between these two already exists
+    final existing = await _db
+        .collection('matches')
+        .where('users', arrayContains: fromUser.uid)
+        .get();
+    final alreadyMatched = existing.docs.any((d) {
+      final users = List<String>.from(d.data()['users'] ?? []);
+      return users.contains(toUser.uid);
+    });
+    if (alreadyMatched) return null;
+
+    final sparks =
+        JuiceEngine.computeSparks(fromUser.juiceProfile, toUser.juiceProfile);
+    return await _createMatch(fromUser, toUser, sparks);
   }
 
   Future<void> passUser(String fromUid, String toUid) async {
@@ -141,8 +165,17 @@ class FirestoreService {
             snapshot.docs.map((doc) => JuiceMatch.fromFirestore(doc)).toList());
   }
 
-  Future<void> updateMatchTier(String matchId, int tier) async {
-    await _db.collection('matches').doc(matchId).update({'tier': tier});
+  Future<JuiceMatch?> getMatchOnce(String matchId) async {
+    final doc = await _db.collection('matches').doc(matchId).get();
+    if (!doc.exists) return null;
+    return JuiceMatch.fromFirestore(doc);
+  }
+
+  Future<void> updateMatchTier(String matchId, int tier, int messageCount) async {
+    await _db.collection('matches').doc(matchId).update({
+      'tier': tier,
+      'messageCount': messageCount,
+    });
   }
 
   // ── Messages ──────────────────────────────────────────────────────────────
