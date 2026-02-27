@@ -22,9 +22,27 @@ class _SplashScreenState extends State<SplashScreen> {
   _navigateAfterSplash() async {
     await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
-    final state = context.read<AuthBloc>().state;
+
+    final bloc = context.read<AuthBloc>();
+
+    // Wait until auth stream emits a definite state (not still loading)
+    AuthState state = bloc.state;
+    if (state is AuthInitial || state is AuthInProgress) {
+      state = await bloc.stream
+          .firstWhere((s) => s is! AuthInitial && s is! AuthInProgress);
+    }
+    if (!mounted) return;
+
     if (state is AuthAuthenticated) {
-      Navigator.pushReplacementNamed(context, '/home');
+      final uid = state.user.uid;
+      final user = await FirestoreService().getUserOnce(uid);
+      if (!mounted) return;
+      // Route to quiz/profile-setup if onboarding not completed
+      if (user == null || user.juiceSummary.isEmpty) {
+        Navigator.pushReplacementNamed(context, '/quiz');
+      } else {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
     } else {
       Navigator.pushReplacementNamed(context, '/login');
     }

@@ -127,12 +127,9 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
         final newTier = (_currentTier % 4) + 1;
         if (newTier > _currentTier) {
           _currentTier = newTier;
-          _service.updateMatchTier(widget.matchId, _currentTier, _messageCount);
-        } else {
+          // Persist only the tier change (messageCount is incremented in sendMessage)
           _service.updateMatchTier(widget.matchId, _currentTier, _messageCount);
         }
-      } else {
-        _service.updateMatchTier(widget.matchId, _currentTier, _messageCount);
       }
     });
   }

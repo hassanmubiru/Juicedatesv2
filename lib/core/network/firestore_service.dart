@@ -148,6 +148,7 @@ class FirestoreService {
       'userPhotos': {user1.uid: user1.photoUrl, user2.uid: user2.photoUrl},
       'sparksScore': sparksScore,
       'tier': 1,
+      'messageCount': 0,
       'lastMessage': '',
       'lastMessageTime': FieldValue.serverTimestamp(),
     });
@@ -206,9 +207,11 @@ class FirestoreService {
       'tierUnlocked': message.tierUnlocked,
       'timestamp': FieldValue.serverTimestamp(),
     });
+    // Atomically bump messageCount and lastMessage in the same write
     batch.update(_db.collection('matches').doc(matchId), {
       'lastMessage': message.text,
       'lastMessageTime': FieldValue.serverTimestamp(),
+      'messageCount': FieldValue.increment(1),
     });
     await batch.commit();
   }
