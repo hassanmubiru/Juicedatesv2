@@ -40,6 +40,7 @@ class ChatListScreen extends StatelessWidget {
                     builder: (_) => SingleChatScreen(
                       name: partnerName,
                       matchId: match.matchId,
+                      partnerUid: match.getPartnerUid(uid),
                     ),
                   ),
                 ),
