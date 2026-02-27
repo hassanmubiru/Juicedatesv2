@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../blocs/auth_bloc.dart';
 import '../../core/network/firestore_service.dart';
 import '../../core/theme/juice_theme.dart';
-import '../../../main.dart' show themeModeNotifier;
+import '../../main.dart' show themeModeNotifier;
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -94,7 +94,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             secondary: const Icon(Icons.flash_on_rounded),
           ),
           const SizedBox(height: 12),
-          if (_isAdmin) ..[
+          if (_isAdmin) ...[
             const _SectionHeader(title: 'Admin'),
             ListTile(
               leading: Container(
