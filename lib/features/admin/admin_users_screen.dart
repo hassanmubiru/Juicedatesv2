@@ -69,95 +69,25 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                 return const Center(child: Text('No users found'));
               }
 
-              return ListView.separated(
-                itemCount: users.length,
-                separatorBuilder: (_, __) =>
-                    const Divider(height: 1, indent: 72),
-                itemBuilder: (context, index) {
-                  final user = users[index];
-                  return ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 4),
-                    leading: CircleAvatar(
-                      radius: 24,
-                      backgroundColor: user.isBanned
-                          ? Colors.red[100]
-                          : JuiceTheme.primaryTangerine
-                              .withValues(alpha: 0.15),
-                      backgroundImage:
-                          user.photoUrl != null && user.photoUrl!.isNotEmpty
-                              ? NetworkImage(user.photoUrl!)
-                              : null,
-                      child: user.photoUrl == null || user.photoUrl!.isEmpty
-                          ? Text(
-                              user.displayName.isNotEmpty
-                                  ? user.displayName[0].toUpperCase()
-                                  : '?',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: user.isBanned
-                                      ? Colors.red
-                                      : JuiceTheme.primaryTangerine),
-                            )
-                          : null,
-                    ),
-                    title: Row(
-                      children: [
-                        Flexible(
-                          child: Text(user.displayName,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w600),
-                              overflow: TextOverflow.ellipsis),
-                        ),
-                        if (user.isAdmin) ...[
-                          const SizedBox(width: 6),
-                          _Badge('Admin', Colors.purple),
-                        ],
-                        if (user.isPremium) ...[
-                          const SizedBox(width: 4),
-                          _Badge('Plus+', JuiceTheme.primaryTangerine),
-                        ],
-                        if (user.isBanned) ...[
-                          const SizedBox(width: 4),
-                          _Badge('Banned', Colors.red),
-                        ],
-                      ],
-                    ),
-                    subtitle: Text(
-                      '${user.city} · ${user.age}y · ${user.email ?? 'no email'}',
-                      style: const TextStyle(fontSize: 12),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: PopupMenuButton<String>(
-                      icon: const Icon(Icons.more_vert_rounded),
-                      onSelected: (action) => _handleAction(action, user),
-                      itemBuilder: (_) => [
-                        PopupMenuItem(
-                          value: 'view',
-                          child: _MenuItem(
-                              Icons.info_outline_rounded, 'View Profile'),
-                        ),
-                        PopupMenuItem(
-                          value: user.isBanned ? 'unban' : 'ban',
-                          child: _MenuItem(
-                            user.isBanned
-                                ? Icons.check_circle_outline_rounded
-                                : Icons.block_rounded,
-                            user.isBanned ? 'Unban User' : 'Ban User',
-                            color: user.isBanned ? Colors.green : Colors.orange,
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: 'delete',
-                          child: _MenuItem(
-                              Icons.delete_outline_rounded, 'Delete Account',
-                              color: Colors.red),
-                        ),
-                      ],
-                    ),
+              return LayoutBuilder(builder: (context, constraints) {
+                final isWide = constraints.maxWidth >= 700;
+                if (isWide) {
+                  return _UsersDataTable(
+                    users: users,
+                    onAction: _handleAction,
                   );
-                },
-              );
+                }
+                return ListView.separated(
+                  itemCount: users.length,
+                  separatorBuilder: (_, __) =>
+                      const Divider(height: 1, indent: 72),
+                  itemBuilder: (context, index) {
+                    final user = users[index];
+                    return _UserListTile(
+                        user: user, onAction: _handleAction);
+                  },
+                );
+              });
             },
           ),
         ),
@@ -218,8 +148,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   }
 }
 
-class _Badge extends StatelessWidget {
-  final String label;
+class _Badge extends StatelessWidget {  final String label;
   final Color color;
   const _Badge(this.label, this.color);
 

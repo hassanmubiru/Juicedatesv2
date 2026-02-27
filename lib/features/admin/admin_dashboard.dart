@@ -9,8 +9,11 @@ class AdminDashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final service = FirestoreService();
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+    return LayoutBuilder(builder: (context, constraints) {
+      final isWide = constraints.maxWidth >= 700;
+      final padding = isWide ? 32.0 : 16.0;
+      return SingleChildScrollView(
+      padding: EdgeInsets.all(padding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -35,10 +38,10 @@ class AdminDashboardScreen extends StatelessWidget {
               return GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
+                crossAxisCount: isWide ? 4 : 2,
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
-                childAspectRatio: 1.2,
+                childAspectRatio: isWide ? 1.4 : 1.2,
                 children: [
                   _StatCard(
                       label: 'Total Users',
@@ -73,21 +76,40 @@ class AdminDashboardScreen extends StatelessWidget {
                 ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          Row(
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
             children: [
-              Expanded(
+              SizedBox(
+                width: isWide ? 200 : double.infinity,
                 child: _QuickActionCard(
                   icon: Icons.person_search_rounded,
                   label: 'View Users',
                   color: Colors.blue,
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
+              SizedBox(
+                width: isWide ? 200 : double.infinity,
                 child: _QuickActionCard(
                   icon: Icons.add_circle_outline_rounded,
                   label: 'Add Event',
                   color: JuiceTheme.juiceGreen,
+                ),
+              ),
+              SizedBox(
+                width: isWide ? 200 : double.infinity,
+                child: _QuickActionCard(
+                  icon: Icons.flag_rounded,
+                  label: 'Review Reports',
+                  color: Colors.orange,
+                ),
+              ),
+              SizedBox(
+                width: isWide ? 200 : double.infinity,
+                child: _QuickActionCard(
+                  icon: Icons.campaign_rounded,
+                  label: 'Send Announcement',
+                  color: Colors.purple,
                 ),
               ),
             ],
@@ -96,6 +118,7 @@ class AdminDashboardScreen extends StatelessWidget {
         ],
       ),
     );
+    });
   }
 }
 
