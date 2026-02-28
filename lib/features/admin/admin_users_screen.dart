@@ -376,24 +376,24 @@ class _UserDetailDialog extends StatelessWidget {
                 ),
               ),
             const SizedBox(height: 12),
-            _Row('UID', user.uid),
-            _Row('Email', user.email ?? '—'),
-            _Row('City', user.city),
-            _Row('Age', '${user.age}'),
-            _Row('Bio', user.bio ?? '—'),
-            _Row('Summary', user.juiceSummary),
-            _Row('Premium', user.isPremium ? 'Yes' : 'No'),
-            _Row('Photos', '${user.photos.length}'),
-            _Row('Banned', user.isBanned ? 'Yes' : 'No'),
+            _row('UID', user.uid),
+            _row('Email', user.email ?? '—'),
+            _row('City', user.city),
+            _row('Age', '${user.age}'),
+            _row('Bio', user.bio ?? '—'),
+            _row('Summary', user.juiceSummary),
+            _row('Premium', user.isPremium ? 'Yes' : 'No'),
+            _row('Photos', '${user.photos.length}'),
+            _row('Banned', user.isBanned ? 'Yes' : 'No'),
             const Divider(height: 20),
             const Text('Juice Profile',
                 style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 6),
-            _ProfileBar('Family', p.family),
-            _ProfileBar('Career', p.career),
-            _ProfileBar('Lifestyle', p.lifestyle),
-            _ProfileBar('Ethics', p.ethics),
-            _ProfileBar('Fun', p.fun),
+            _profileBar('Family', p.family),
+            _profileBar('Career', p.career),
+            _profileBar('Lifestyle', p.lifestyle),
+            _profileBar('Ethics', p.ethics),
+            _profileBar('Fun', p.fun),
           ],
         ),
       ),
@@ -405,7 +405,7 @@ class _UserDetailDialog extends StatelessWidget {
     );
   }
 
-  Widget _Row(String label, String value) {
+  Widget _row(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
@@ -423,7 +423,7 @@ class _UserDetailDialog extends StatelessWidget {
     );
   }
 
-  Widget _ProfileBar(String label, double value) {
+  Widget _profileBar(String label, double value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(

@@ -280,8 +280,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   onSelected: (val) {
                     setState(() {
                       if (val) {
-                        if (_selectedInterests.length < 8)
+                        if (_selectedInterests.length < 8) {
                           _selectedInterests.add(interest);
+                        }
                       } else {
                         _selectedInterests.remove(interest);
                       }

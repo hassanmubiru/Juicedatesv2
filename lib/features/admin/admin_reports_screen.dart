@@ -315,7 +315,7 @@ class _UidChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final short = uid.length > 8 ? uid.substring(0, 8) + '…' : uid;
+    final short = uid.length > 8 ? '${uid.substring(0, 8)}…' : uid;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

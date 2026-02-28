@@ -248,14 +248,14 @@ class _EventFormDialogState extends State<_EventFormDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _Field(_title, 'Title *'),
+            _field(_title, 'Title *'),
             const SizedBox(height: 8),
-            _Field(_category, 'Category',
+            _field(_category, 'Category',
                 hint: 'Family, Career, Lifestyle…'),
             const SizedBox(height: 8),
-            _Field(_date, 'Date', hint: 'e.g. Oct 24, 2026'),
+            _field(_date, 'Date', hint: 'e.g. Oct 24, 2026'),
             const SizedBox(height: 8),
-            _Field(_location, 'Location'),
+            _field(_location, 'Location'),
             const SizedBox(height: 8),
             TextField(
               controller: _description,
@@ -289,7 +289,7 @@ class _EventFormDialogState extends State<_EventFormDialog> {
     );
   }
 
-  Widget _Field(TextEditingController ctrl, String label, {String? hint}) {
+  Widget _field(TextEditingController ctrl, String label, {String? hint}) {
     return TextField(
       controller: ctrl,
       decoration: InputDecoration(
