@@ -1,75 +1,39 @@
+// RegisterScreen — replaces the old tab-based email_auth_screen
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/network/firestore_service.dart';
 import '../../core/theme/juice_theme.dart';
 import '../../widgets/juice_button.dart';
 
-class EmailAuthScreen extends StatefulWidget {
-  const EmailAuthScreen({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<EmailAuthScreen> createState() => _EmailAuthScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _EmailAuthScreenState extends State<EmailAuthScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _RegisterScreenState extends State<RegisterScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
-  final _nameCtrl = TextEditingController();
+  final _confirmCtrl = TextEditingController();
   bool _loading = false;
   bool _obscure = true;
+  bool _obscureConfirm = true;
   final _service = FirestoreService();
 
   @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
   void dispose() {
-    _tabController.dispose();
+    _nameCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
-    _nameCtrl.dispose();
+    _confirmCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _signIn() async {
-    if (_emailCtrl.text.trim().isEmpty || _passwordCtrl.text.isEmpty) {
-      _showError('Please fill in all fields.');
-      return;
-    }
-    setState(() => _loading = true);
-    try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailCtrl.text.trim(),
-        password: _passwordCtrl.text,
-      );
-      final uid = FirebaseAuth.instance.currentUser!.uid;
-      final existing = await _service.getUserOnce(uid);
-      if (!mounted) return;
-      Navigator.pushReplacementNamed(
-          context, existing == null ? '/quiz' : '/home');
-    } on FirebaseAuthException catch (e) {
-      _showError(_friendlyError(e.code));
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _signUp() async {
-    if (_nameCtrl.text.trim().isEmpty ||
-        _emailCtrl.text.trim().isEmpty ||
-        _passwordCtrl.text.isEmpty) {
-      _showError('Please fill in all fields.');
-      return;
-    }
-    if (_passwordCtrl.text.length < 6) {
-      _showError('Password must be at least 6 characters.');
-      return;
-    }
+  Future<void> _register() async {
+    if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
       final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
@@ -80,31 +44,24 @@ class _EmailAuthScreenState extends State<EmailAuthScreen>
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/quiz');
     } on FirebaseAuthException catch (e) {
-      _showError(_friendlyError(e.code));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(_friendlyError(e.code))));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
-  }
-
   String _friendlyError(String code) {
     switch (code) {
-      case 'user-not-found':
-        return 'No account found with this email.';
-      case 'wrong-password':
-        return 'Incorrect password.';
       case 'email-already-in-use':
         return 'This email is already registered.';
       case 'invalid-email':
         return 'Please enter a valid email address.';
       case 'weak-password':
-        return 'Password is too weak.';
+        return 'Password is too weak (min 6 characters).';
       default:
-        return 'Authentication failed. Please try again.';
+        return 'Registration failed. Please try again.';
     }
   }
 
