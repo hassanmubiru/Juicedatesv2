@@ -21,6 +21,8 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final gsi = GoogleSignIn(
         scopes: ['email'],
+        serverClientId:
+            '408134384062-lmpotnn8c3n1frccsgqm1f6p7qpdu4vu.apps.googleusercontent.com',
       );
       final googleUser = await gsi.signIn();
       if (googleUser == null) {
