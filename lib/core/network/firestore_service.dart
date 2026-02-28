@@ -1,22 +1,21 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import '../../models/user_models.dart';
 import '../utils/juice_engine.dart';
+import 'cloudinary_service.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final _cloudinary = CloudinaryService();
 
-  /// Uploads a photo to Firebase Storage and returns the download URL.
+  /// Uploads a photo to Cloudinary and returns the CDN URL.
+  /// Cloudinary free tier: 25 GB storage + bandwidth, zero egress fees.
   Future<String> uploadPhoto(String uid, File file, int index) async {
-    final ref = _storage.ref('users/$uid/photos/photo_$index.jpg');
-    final task = await ref.putFile(
-      file,
-      SettableMetadata(contentType: 'image/jpeg'),
+    return _cloudinary.uploadPhoto(
+      file: file,
+      publicId: 'juicedates/users/$uid/photo_$index',
     );
-    return await task.ref.getDownloadURL();
   }
 
   Future<void> blockUser(String myUid, String blockedUid) async {
@@ -63,16 +62,18 @@ class FirestoreService {
     return JuiceUser.fromFirestore(doc);
   }
 
-  /// Returns feed users, excluding:
-  ///  - the current user themselves
-  ///  - users already liked or passed
+  /// Returns up to 60 feed candidates, excluding:
+  ///  - the current user
+  ///  - users already liked/passed/blocked
   ///  - banned users
-  ///  - users who have blocked the current user
-  Stream<List<JuiceUser>> getFeedUsers(String uid) {
+  ///  - users who blocked the current user
+  /// Limited to 60 docs per snapshot to avoid full-collection reads.
+  Stream<List<JuiceUser>> getFeedUsers(String uid, {int limit = 60}) {
     return _db
         .collection('users')
         .where('uid', isNotEqualTo: uid)
         .where('isBanned', isEqualTo: false)
+        .limit(limit)
         .snapshots()
         .asyncMap((snapshot) async {
       final currentUserDoc = await _db.collection('users').doc(uid).get();
@@ -85,11 +86,7 @@ class FirestoreService {
       };
       return snapshot.docs
           .map((doc) => JuiceUser.fromFirestore(doc))
-          .where((u) {
-            // Exclude if they blocked me
-            if (u.blockedUids.contains(uid)) return false;
-            return !excluded.contains(u.uid);
-          })
+          .where((u) => !excluded.contains(u.uid) && !u.blockedUids.contains(uid))
           .toList();
     });
   }
