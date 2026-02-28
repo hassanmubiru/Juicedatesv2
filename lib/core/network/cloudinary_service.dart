@@ -31,8 +31,6 @@ class CloudinaryService {
     final request = http.MultipartRequest('POST', Uri.parse(_uploadUrl))
       ..fields['upload_preset'] = _uploadPreset
       ..fields['public_id'] = publicId
-      // Auto-format to WebP and cap quality at 80 for bandwidth savings
-      ..fields['eager'] = 'f_auto,q_auto:good,w_1200,c_limit'
       ..files.add(await http.MultipartFile.fromPath('file', file.path));
 
     final streamed = await request.send();
@@ -43,11 +41,6 @@ class CloudinaryService {
     }
 
     final json = jsonDecode(body) as Map<String, dynamic>;
-    // Use the eager (optimised) URL if available, otherwise the original
-    final eager = json['eager'] as List?;
-    if (eager != null && eager.isNotEmpty) {
-      return (eager.first as Map<String, dynamic>)['secure_url'] as String;
-    }
     return json['secure_url'] as String;
   }
 
