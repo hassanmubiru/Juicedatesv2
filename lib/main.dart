@@ -101,7 +101,7 @@ class _JuiceDatesAppState extends State<JuiceDatesApp> {
       final notification = message.notification;
       if (notification == null) return;
       final ctx = navigatorKey.currentContext;
-      if (ctx == null) return;
+      if (ctx == null || !ctx.mounted) return;
       ScaffoldMessenger.of(ctx).showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
