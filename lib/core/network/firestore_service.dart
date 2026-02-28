@@ -158,6 +158,7 @@ class FirestoreService {
         .collection('matches')
         .where('users', arrayContains: uid)
         .orderBy('lastMessageTime', descending: true)
+        .limit(50) // cap at 50 — nobody has more active convos
         .snapshots()
         .map((snapshot) =>
             snapshot.docs.map((doc) => JuiceMatch.fromFirestore(doc)).toList());
@@ -184,6 +185,7 @@ class FirestoreService {
         .doc(matchId)
         .collection('messages')
         .orderBy('timestamp', descending: false)
+        .limitToLast(100) // only stream the last 100 messages
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => JuiceMessage.fromFirestore(doc.data()))
