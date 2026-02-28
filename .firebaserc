@@ -1,0 +1,12 @@
+{
+  "projects": {
+    "default": "juicedates-2ebf0"
+  },
+  "targets": {
+    "juicedates-2ebf0": {
+      "hosting": {
+        "app": ["juicedates-2ebf0"]
+      }
+    }
+  }
+}
