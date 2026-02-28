@@ -67,116 +67,164 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('JuiceDates'),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: JuiceTheme.primaryTangerine,
-          labelColor: JuiceTheme.primaryTangerine,
-          tabs: const [Tab(text: 'Sign In'), Tab(text: 'Sign Up')],
+        leading: BackButton(
+          onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 16),
+                const Icon(Icons.favorite_rounded,
+                    size: 64, color: JuiceTheme.primaryTangerine),
+                const SizedBox(height: 16),
+                Text('Create account',
+                    style: theme.textTheme.headlineMedium
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center),
+                const SizedBox(height: 8),
+                Text('Join JuiceDates today',
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(color: Colors.grey),
+                    textAlign: TextAlign.center),
+                const SizedBox(height: 32),
+
+                // Full name
+                TextFormField(
+                  controller: _nameCtrl,
+                  textInputAction: TextInputAction.next,
+                  textCapitalization: TextCapitalization.words,
+                  decoration:
+                      _inputDecoration('Full Name', Icons.person_outline),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Enter your name';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Email
+                TextFormField(
+                  controller: _emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  decoration: _inputDecoration('Email', Icons.email_outlined),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Enter your email';
+                    if (!v.contains('@')) return 'Enter a valid email';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Password
+                TextFormField(
+                  controller: _passwordCtrl,
+                  obscureText: _obscure,
+                  textInputAction: TextInputAction.next,
+                  decoration: _inputDecoration(
+                    'Password',
+                    Icons.lock_outline,
+                    suffix: IconButton(
+                      icon: Icon(
+                          _obscure ? Icons.visibility_off : Icons.visibility,
+                          size: 20),
+                      onPressed: () => setState(() => _obscure = !_obscure),
+                    ),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Enter a password';
+                    if (v.length < 6) return 'Password must be at least 6 characters';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Confirm password
+                TextFormField(
+                  controller: _confirmCtrl,
+                  obscureText: _obscureConfirm,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => _register(),
+                  decoration: _inputDecoration(
+                    'Confirm Password',
+                    Icons.lock_outline,
+                    suffix: IconButton(
+                      icon: Icon(
+                          _obscureConfirm
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          size: 20),
+                      onPressed: () =>
+                          setState(() => _obscureConfirm = !_obscureConfirm),
+                    ),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Confirm your password';
+                    if (v != _passwordCtrl.text) return 'Passwords do not match';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 32),
+
+                // Register button
+                _loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : JuiceButton(
+                        onPressed: _register,
+                        text: 'Create Account',
+                        isGradient: true,
+                      ),
+                const SizedBox(height: 24),
+
+                // Sign in link
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('Already have an account?'),
+                    TextButton(
+                      onPressed: () =>
+                          Navigator.pushReplacementNamed(context, '/login'),
+                      child: const Text('Sign In',
+                          style: TextStyle(
+                              color: JuiceTheme.primaryTangerine,
+                              fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [_buildSignIn(), _buildSignUp()],
-      ),
     );
   }
 
-  Widget _buildSignIn() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(height: 32),
-          const Icon(Icons.favorite_rounded,
-              size: 60, color: JuiceTheme.primaryTangerine),
-          const SizedBox(height: 24),
-          _buildTextField(_emailCtrl, 'Email', Icons.email_rounded,
-              keyboardType: TextInputType.emailAddress),
-          const SizedBox(height: 16),
-          _buildPasswordField(),
-          const SizedBox(height: 32),
-          _loading
-              ? const Center(child: CircularProgressIndicator())
-              : JuiceButton(
-                  onPressed: _signIn,
-                  text: 'Sign In',
-                  isGradient: true,
-                ),
-          const SizedBox(height: 16),
-          TextButton(
-            onPressed: () => _tabController.animateTo(1),
-            child: const Text("Don't have an account? Sign up"),
-          ),
-        ],
+  InputDecoration _inputDecoration(String label, IconData icon,
+      {Widget? suffix}) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: Colors.grey),
+      suffixIcon: suffix,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300),
       ),
-    );
-  }
-
-  Widget _buildSignUp() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(height: 32),
-          _buildTextField(_nameCtrl, 'Full Name', Icons.person_rounded),
-          const SizedBox(height: 16),
-          _buildTextField(_emailCtrl, 'Email', Icons.email_rounded,
-              keyboardType: TextInputType.emailAddress),
-          const SizedBox(height: 16),
-          _buildPasswordField(),
-          const SizedBox(height: 32),
-          _loading
-              ? const Center(child: CircularProgressIndicator())
-              : JuiceButton(
-                  onPressed: _signUp,
-                  text: 'Create Account',
-                  isGradient: true,
-                ),
-          const SizedBox(height: 16),
-          TextButton(
-            onPressed: () => _tabController.animateTo(0),
-            child: const Text('Already have an account? Sign in'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTextField(
-    TextEditingController ctrl,
-    String label,
-    IconData icon, {
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return TextField(
-      controller: ctrl,
-      keyboardType: keyboardType,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: JuiceTheme.primaryTangerine),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
-
-  Widget _buildPasswordField() {
-    return TextField(
-      controller: _passwordCtrl,
-      obscureText: _obscure,
-      decoration: InputDecoration(
-        labelText: 'Password',
-        prefixIcon:
-            const Icon(Icons.lock_rounded, color: JuiceTheme.primaryTangerine),
-        suffixIcon: IconButton(
-          icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
-          onPressed: () => setState(() => _obscure = !_obscure),
-        ),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide:
+            const BorderSide(color: JuiceTheme.primaryTangerine, width: 2),
       ),
     );
   }
