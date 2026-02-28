@@ -1,7 +1,6 @@
 // RegisterScreen — replaces the old tab-based email_auth_screen
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../core/network/firestore_service.dart';
 import '../../core/theme/juice_theme.dart';
 import '../../widgets/juice_button.dart';
 
@@ -21,7 +20,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _loading = false;
   bool _obscure = true;
   bool _obscureConfirm = true;
-  final _service = FirestoreService();
 
   @override
   void dispose() {
