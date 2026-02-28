@@ -3,24 +3,21 @@
     "source": "functions",
     "runtime": "nodejs20"
   },
-  "hosting": [
-    {
-      "target": "app",
-      "public": "build/web",
-      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-      "rewrites": [{"source": "**", "destination": "/index.html"}],
-      "headers": [
-        {
-          "source": "**/*.@(js|css)",
-          "headers": [{"key": "Cache-Control", "value": "max-age=31536000"}]
-        },
-        {
-          "source": "**",
-          "headers": [{"key": "X-Frame-Options", "value": "SAMEORIGIN"}]
-        }
-      ]
-    }
-  ],
+  "hosting": {
+    "public": "build/web",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [{"source": "**", "destination": "/index.html"}],
+    "headers": [
+      {
+        "source": "**/*.@(js|css|wasm)",
+        "headers": [{"key": "Cache-Control", "value": "max-age=31536000"}]
+      },
+      {
+        "source": "**",
+        "headers": [{"key": "X-Frame-Options", "value": "SAMEORIGIN"}]
+      }
+    ]
+  },
   "firestore": {"rules":"firestore.rules","indexes":"firestore.indexes.json"},
   "storage": {"rules":"storage.rules"},
   "flutter":{"platforms":{"android":{"default":{"projectId":"juicedates-2ebf0","appId":"1:408134384062:android:cfdf27d88d7c75bddf21ef","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"juicedates-2ebf0","configurations":{"android":"1:408134384062:android:cfdf27d88d7c75bddf21ef","ios":"1:408134384062:ios:467483d9b80c47bddf21ef","macos":"1:408134384062:ios:467483d9b80c47bddf21ef","web":"1:408134384062:web:77b25b3a22972e42df21ef","windows":"1:408134384062:web:7bfe86ba8544abe9df21ef"}}}}}}
