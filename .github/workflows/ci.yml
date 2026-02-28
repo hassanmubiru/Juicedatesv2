@@ -114,7 +114,7 @@ jobs:
         run: flutter pub get
 
       - name: Build Flutter Web
-        run: flutter build web --release --web-renderer canvaskit --base-href /
+        run: flutter build web --release --base-href /
 
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
