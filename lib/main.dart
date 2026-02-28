@@ -176,7 +176,7 @@ class _JuiceDatesAppState extends State<JuiceDatesApp> {
           home: const SplashScreen(),
           routes: {
             '/login': (context) => const LoginScreen(),
-            '/email-auth': (context) => const EmailAuthScreen(),
+            '/register': (context) => const RegisterScreen(),
             '/quiz': (context) => const QuizScreen(),
             '/summary': (context) => const JuiceSummaryScreen(),
             '/profile-setup': (context) => const ProfileSetupScreen(),
