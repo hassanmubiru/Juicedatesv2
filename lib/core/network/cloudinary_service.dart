@@ -14,8 +14,8 @@ import 'package:http/http.dart' as http;
 ///   3. Replace the two constants below with your values.
 class CloudinaryService {
   // ── Configuration ─────────────────────────────────────────────────────────
-  static const String _cloudName = 'YOUR_CLOUD_NAME';       // e.g. 'dxyz123abc'
-  static const String _uploadPreset = 'YOUR_UPLOAD_PRESET'; // e.g. 'juicedates_unsigned'
+  static const String _cloudName = 'dpqrxpf4c';       // e.g. 'dxyz123abc'
+  static const String _uploadPreset = 'vhjumaay'; // e.g. 'juicedates_unsigned'
 
   static const String _uploadUrl =
       'https://api.cloudinary.com/v1_1/$_cloudName/image/upload';
