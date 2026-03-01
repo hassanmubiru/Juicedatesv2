@@ -12,7 +12,7 @@ class NotifyService {
 
   // ── Configuration ─────────────────────────────────────────────────────────
   // Replace these after deploying server to Render.com
-  static const String _serverUrl = 'https://juicedates-notify.onrender.com';
+  static const String _serverUrl = 'https://juicedatesv2.onrender.com';
   static const String _apiKey    = 'cUyczwQ8y7UWO64_5Y9_u5N2V37FxhUC';
 
   // ─────────────────────────────────────────────────────────────────────────
