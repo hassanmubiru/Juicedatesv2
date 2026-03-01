@@ -154,7 +154,7 @@ class _ReportCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   OutlinedButton.icon(
-                    onPressed: () => service.banUser(report.reportedUid),
+                    onPressed: () => service.banUser(report.reportedUid, ''),
                     icon: const Icon(Icons.block_rounded, size: 16),
                     label: const Text('Ban User'),
                     style: OutlinedButton.styleFrom(
@@ -281,7 +281,7 @@ class _ReportsTable extends StatelessWidget {
                         style: TextStyle(color: Colors.grey))
                     : Row(mainAxisSize: MainAxisSize.min, children: [
                         OutlinedButton(
-                          onPressed: () => service.banUser(r.reportedUid),
+                          onPressed: () => service.banUser(r.reportedUid, ''),
                           style: OutlinedButton.styleFrom(
                               foregroundColor: Colors.orange,
                               visualDensity: VisualDensity.compact),
