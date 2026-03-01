@@ -4,6 +4,7 @@
     "runtime": "nodejs20"
   },
   "hosting": {
+    "site": "juicedates-2ebf0",
     "public": "hosting",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "headers": [
