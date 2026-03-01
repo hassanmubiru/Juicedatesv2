@@ -49,7 +49,23 @@ class PremiumFiltersScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 32),
                       JuiceButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pop(context);
+                          showDialog(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                              title: const Text('Juice Plus+'),
+                              content: const Text(
+                                  'Premium filters are coming soon! Stay tuned for updates.'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('OK'),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                         text: 'Get Juice Plus+',
                         isGradient: true,
                       ),

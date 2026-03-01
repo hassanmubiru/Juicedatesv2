@@ -31,6 +31,7 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
   int _currentTier = 1;
   double _progression = 0.0;
   int _messageCount = 0;
+  String? _partnerPhotoUrl;
 
   @override
   void initState() {
@@ -47,6 +48,7 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
         _currentTier = match.tier;
         _messageCount = match.messageCount;
         _progression = (_messageCount % 10) / 10.0;
+        _partnerPhotoUrl = match.getPartnerPhoto(_myUid);
       });
     }
   }

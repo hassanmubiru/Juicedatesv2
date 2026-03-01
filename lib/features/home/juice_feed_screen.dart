@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
@@ -20,6 +21,7 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
   JuiceUser? _currentUser;
   bool _loading = true;
   String? _error;
+  StreamSubscription<List<JuiceUser>>? _feedSub;
 
   @override
   void initState() {
@@ -29,6 +31,8 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
 
   Future<void> _loadFeed() async {
     setState(() { _loading = true; _error = null; });
+    await _feedSub?.cancel();
+    _feedSub = null;
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
@@ -39,7 +43,7 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
       return;
     }
 
-    _service.getFeedUsers(uid).listen(
+    _feedSub = _service.getFeedUsers(uid).listen(
       (users) {
         if (mounted) setState(() { _feedUsers = users; _loading = false; });
       },
@@ -88,6 +92,7 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
 
   @override
   void dispose() {
+    _feedSub?.cancel();
     _cardController.dispose();
     super.dispose();
   }
