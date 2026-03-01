@@ -13,7 +13,22 @@ const admin   = require('firebase-admin');
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
+const rawSA = process.env.FIREBASE_SERVICE_ACCOUNT;
+if (!rawSA) {
+  console.error('ERROR: FIREBASE_SERVICE_ACCOUNT environment variable is not set.');
+  process.exit(1);
+}
+// Replace literal \\n (from env var pasting) back to real newlines in private_key
+let serviceAccount;
+try {
+  serviceAccount = JSON.parse(rawSA);
+  if (serviceAccount.private_key) {
+    serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+  }
+} catch (e) {
+  console.error('ERROR: FIREBASE_SERVICE_ACCOUNT is not valid JSON.\n', e.message);
+  process.exit(1);
+}
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -24,7 +39,7 @@ const messaging = admin.messaging();
 const app       = express();
 app.use(express.json());
 
-const API_KEY = process.env.NOTIFY_API_KEY || 'juice-dev-key';
+const API_KEY = process.env.NOTIFY_API_KEY || 'cUyczwQ8y7UWO64_5Y9_u5N2V37FxhUC';
 const PORT    = process.env.PORT || 10000;
 
 // ─── Auth middleware ──────────────────────────────────────────────────────────
