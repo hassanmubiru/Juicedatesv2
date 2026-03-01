@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/network/firestore_service.dart';
+import '../../core/theme/juice_theme.dart';
 import '../../core/utils/juice_engine.dart';
+import '../../core/utils/location_service.dart';
 import '../../models/user_models.dart';
 import '../../widgets/juice_button.dart';
-import '../../core/theme/juice_theme.dart';
 
 const List<String> _kInterests = [
   'Hiking', 'Reading', 'Cooking', 'Travel', 'Gaming', 'Music',
@@ -32,12 +33,28 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final List<File?> _photos = List.filled(6, null);
   final List<String> _selectedInterests = [];
   bool _saving = false;
+  bool _loadingLocation = false;
 
   @override
   void initState() {
     super.initState();
     final fbUser = FirebaseAuth.instance.currentUser;
     _nameController = TextEditingController(text: fbUser?.displayName ?? '');
+  }
+
+  Future<void> _detectCity() async {
+    setState(() => _loadingLocation = true);
+    final city = await LocationService.getCurrentCity();
+    if (mounted) {
+      setState(() => _loadingLocation = false);
+      if (city != null) {
+        _cityController.text = city;
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not detect location. Please check location permissions.')),
+        );
+      }
+    }
   }
 
   Future<void> _pickPhoto(int index) async {
@@ -286,16 +303,34 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            TextField(
-              controller: _cityController,
-              decoration: InputDecoration(
-                labelText: 'City',
-                prefixIcon: const Icon(Icons.location_on_rounded,
-                    color: JuiceTheme.primaryTangerine),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _cityController,
+                    decoration: InputDecoration(
+                      labelText: 'City',
+                      prefixIcon: const Icon(Icons.location_on_rounded,
+                          color: JuiceTheme.primaryTangerine),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                _loadingLocation
+                    ? const SizedBox(
+                        width: 48, height: 48,
+                        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      )
+                    : IconButton(
+                        tooltip: 'Use my location',
+                        icon: const Icon(Icons.my_location_rounded,
+                            color: JuiceTheme.primaryTangerine),
+                        onPressed: _detectCity,
+                      ),
+              ],
             ),
             const SizedBox(height: 16),
             const Text(
