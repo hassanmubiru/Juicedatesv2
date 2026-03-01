@@ -31,6 +31,31 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   Future<void> _toggleRsvp() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
+
+    // Fallback events (id starts with 'local_') are not in Firestore yet.
+    // Update UI locally and prompt the user.
+    if (widget.event.id.startsWith('local_')) {
+      setState(() {
+        if (_hasRsvped) {
+          _hasRsvped = false;
+          _attendees--;
+        } else {
+          _hasRsvped = true;
+          _attendees++;
+        }
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_hasRsvped
+                ? 'RSVP confirmed! You\'re on the list.'
+                : 'RSVP cancelled.'),
+          ),
+        );
+      }
+      return;
+    }
+
     setState(() => _loading = true);
     try {
       if (_hasRsvped) {
