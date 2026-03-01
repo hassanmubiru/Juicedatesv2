@@ -87,7 +87,8 @@ class FirestoreService {
           .where((u) =>
               !excluded.contains(u.uid) &&
               !u.blockedUids.contains(uid) &&
-              u.isBanned != true)
+              u.isBanned != true &&
+              !u.isAdmin)
           .toList();
     });
   }
