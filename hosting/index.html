@@ -334,30 +334,12 @@
     <button class="submit-btn" onclick="submitForm('suggest')">Submit Suggestion</button>
   </div>
 
-  <!-- BETA REVIEWS -->
-  <div class="section-title" style="margin-top:48px; font-size:1.1rem;">What beta testers are saying</div>
-  <div class="reviews-list">
-    <div class="review-card">
-      <div class="rc-head"><div class="rc-name">Amara K.</div><div class="rc-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div></div>
-      <div class="rc-text">Finally an app that asks what matters instead of just looks. The Values Quiz is genius — I matched with someone at 91% and we've been talking every day.</div>
-      <span class="rc-tag">Values quiz ✓</span>
-    </div>
-    <div class="review-card">
-      <div class="rc-head"><div class="rc-name">Kofi M.</div><div class="rc-stars">&#9733;&#9733;&#9733;&#9733;&#9734;</div></div>
-      <div class="rc-text">The tier chat system is really unique. Feels like the conversations actually go somewhere instead of just "hey" and silence. Would love voice notes in chat too.</div>
-      <span class="rc-tag">Chat system ✓</span>
-    </div>
-    <div class="review-card">
-      <div class="rc-head"><div class="rc-name">Zawadi N.</div><div class="rc-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div></div>
-      <div class="rc-text">Love the design and how clean everything feels. The events feature is a game changer — I actually met my match at a Juice Tribe meetup!</div>
-      <span class="rc-tag">Events ✓</span>
-    </div>
-    <div class="review-card">
-      <div class="rc-head"><div class="rc-name">Tariq O.</div><div class="rc-stars">&#9733;&#9733;&#9733;&#9733;&#9734;</div></div>
-      <div class="rc-text">Works great for the most part. Had one crash on the profile edit screen but the chat and matching are smooth. Excited to see where this goes!</div>
-      <span class="rc-tag">Feedback submitted ✓</span>
-    </div>
+  <!-- LIVE REVIEWS -->
+  <div class="section-title" style="margin-top:48px; font-size:1.1rem;">What testers are saying</div>
+  <div id="reviews-list" class="reviews-list">
+    <div id="reviews-loading" style="color:var(--grey);font-size:.9rem;padding:16px 0;">Loading reviews…</div>
   </div>
+  <div id="reviews-empty" style="display:none;color:var(--grey);font-size:.9rem;padding:16px 0;">No reviews yet — be the first! ☝️</div>
 </section>
 
 <footer>
@@ -405,6 +387,80 @@
     });
   }
 
+  // Firestore REST helpers
+  var FS = 'https://firestore.googleapis.com/v1/projects/juicedates-2ebf0/databases/(default)/documents';
+
+  function fsWrite(collection, fields) {
+    return fetch(FS + '/' + collection, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: fields })
+    });
+  }
+
+  function fsQuery(collection, orderField, limit) {
+    return fetch(FS + ':runQuery', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        structuredQuery: {
+          from: [{ collectionId: collection }],
+          orderBy: [{ field: { fieldPath: orderField }, direction: 'DESCENDING' }],
+          limit: limit
+        }
+      })
+    }).then(function(r){ return r.json(); });
+  }
+
+  function fsVal(field) {
+    if (!field) return '';
+    return field.stringValue !== undefined ? field.stringValue
+         : field.integerValue !== undefined ? +field.integerValue
+         : field.arrayValue ? field.arrayValue.values.map(function(v){ return v.stringValue || ''; })
+         : '';
+  }
+
+  // Render a single review card and prepend to list
+  function renderReview(doc) {
+    var f = doc.fields || {};
+    var name = fsVal(f.name) || 'Anonymous';
+    var rating = +fsVal(f.rating) || 0;
+    var text = fsVal(f.text) || '';
+    var tags = fsVal(f.tags);
+    if (!text) return;
+    var stars = '';
+    for (var i = 1; i <= 5; i++) stars += i <= rating ? '&#9733;' : '&#9734;';
+    var tagHtml = Array.isArray(tags) && tags.length
+      ? '<span class="rc-tag">' + tags.slice(0,3).join(' &middot; ') + '</span>' : '';
+    var card = document.createElement('div');
+    card.className = 'review-card';
+    card.innerHTML =
+      '<div class="rc-head"><div class="rc-name">' + esc(name) + '</div><div class="rc-stars">' + stars + '</div></div>' +
+      '<div class="rc-text">' + esc(text) + '</div>' + tagHtml;
+    var list = document.getElementById('reviews-list');
+    list.insertBefore(card, list.firstChild);
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // Load reviews on page load
+  function loadReviews() {
+    fsQuery('website_reviews', 'timestamp', 50).then(function(rows) {
+      document.getElementById('reviews-loading').style.display = 'none';
+      var docs = rows.filter(function(r){ return r.document; }).map(function(r){ return r.document; });
+      if (!docs.length) {
+        document.getElementById('reviews-empty').style.display = 'block';
+        return;
+      }
+      docs.forEach(renderReview);
+    }).catch(function() {
+      document.getElementById('reviews-loading').textContent = 'Could not load reviews.';
+    });
+  }
+  loadReviews();
+
   // Submit
   function submitForm(type) {
     var data = { type: type, timestamp: new Date().toISOString() };
@@ -415,6 +471,35 @@
       data.text = document.getElementById('review-text').value.trim();
       data.name = document.getElementById('review-name').value.trim() || 'Anonymous';
       if (!data.text) { alert('Please write your review.'); return; }
+
+      // Build Firestore field map and save
+      var fields = {
+        name:      { stringValue: data.name },
+        rating:    { integerValue: data.rating },
+        text:      { stringValue: data.text },
+        timestamp: { stringValue: data.timestamp },
+        tags:      { arrayValue: { values: data.tags.map(function(t){ return { stringValue: t }; }) } }
+      };
+      var btn = document.querySelector('#panel-review .submit-btn');
+      btn.disabled = true;
+      btn.textContent = 'Submitting…';
+      fsWrite('website_reviews', fields).then(function(res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      }).then(function(doc) {
+        document.getElementById('reviews-empty').style.display = 'none';
+        renderReview(doc);
+        showToast('review');
+        clearForm('review');
+      }).catch(function(err) {
+        alert('Could not save your review. Please try again.');
+        console.error(err);
+      }).finally(function() {
+        btn.disabled = false;
+        btn.textContent = 'Submit Review';
+      });
+      return; // async path
+
     } else if (type === 'bug') {
       data.tags = Array.from(document.querySelectorAll('#bug-tags .tag.selected')).map(function(t){ return t.textContent; });
       data.text = document.getElementById('bug-text').value.trim();
@@ -427,17 +512,11 @@
       data.priority = document.getElementById('sug-priority').value;
       if (!data.text) { alert('Please describe your idea.'); return; }
     }
-    // Save locally
+    // Bug/suggestion: save locally only
     var key = 'jd_feedback';
     var existing = JSON.parse(localStorage.getItem(key) || '[]');
     existing.push(data);
     localStorage.setItem(key, JSON.stringify(existing));
-    // Optional remote submit (silent fail)
-    fetch('https://submit-form.com/juicedates-feedback', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify(data)
-    }).catch(function(){});
     showToast(type);
     clearForm(type);
   }
