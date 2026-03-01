@@ -24,12 +24,21 @@ class ProfileSetupScreen extends StatefulWidget {
 
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final _service = FirestoreService();
+  late final TextEditingController _nameController;
   final _cityController = TextEditingController(text: 'Kampala');
   final _ageController = TextEditingController(text: '25');
+  final _bioController = TextEditingController();
   final _picker = ImagePicker();
   final List<File?> _photos = List.filled(6, null);
   final List<String> _selectedInterests = [];
   bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final fbUser = FirebaseAuth.instance.currentUser;
+    _nameController = TextEditingController(text: fbUser?.displayName ?? '');
+  }
 
   Future<void> _pickPhoto(int index) async {
     final source = await showModalBottomSheet<ImageSource>(
@@ -71,6 +80,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       Navigator.pushReplacementNamed(context, '/login');
       return;
     }
+    final name = _nameController.text.trim();
+    final city = _cityController.text.trim();
+    if (name.isEmpty || city.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your name and city.')),
+      );
+      return;
+    }
 
     final profile =
         ModalRoute.of(context)?.settings.arguments as JuiceProfile? ??
@@ -105,19 +122,18 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         }
       }
 
+      await firebaseUser.updateDisplayName(name);
       final juiceUser = JuiceUser(
         uid: firebaseUser.uid,
-        displayName: firebaseUser.displayName ?? 'JuiceUser',
+        displayName: name,
         age: int.tryParse(_ageController.text.trim()) ?? 25,
         email: firebaseUser.email,
-        photoUrl: uploadedUrls.isNotEmpty
-            ? uploadedUrls.first
-            : firebaseUser.photoURL,
+        photoUrl: uploadedUrls.isNotEmpty ? uploadedUrls.first : null,
         photos: uploadedUrls,
-        city: _cityController.text.trim(),
+        city: city,
         juiceProfile: profile,
         juiceSummary: summary,
-        bio: '',
+        bio: _bioController.text.trim(),
         interests: _selectedInterests,
       );
       await _service.createUser(juiceUser);
@@ -136,8 +152,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _cityController.dispose();
     _ageController.dispose();
+    _bioController.dispose();
     super.dispose();
   }
 
