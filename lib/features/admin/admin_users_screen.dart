@@ -209,6 +209,7 @@ class _UserListTile extends StatelessWidget {
         ),
         if (user.isAdmin) ...[const SizedBox(width: 6), _Badge('Admin', Colors.purple)],
         if (user.isPremium) ...[const SizedBox(width: 4), _Badge('Plus+', JuiceTheme.primaryTangerine)],
+        if (!user.isPremium && user.premiumRequested) ...[const SizedBox(width: 4), _Badge('Req+', Colors.blue)],
         if (user.isBanned) ...[const SizedBox(width: 4), _Badge('Banned', Colors.red)],
       ]),
       subtitle: Text(
@@ -281,6 +282,10 @@ class _UsersDataTable extends StatelessWidget {
                   if (user.isPremium) ...[
                     const SizedBox(width: 4),
                     _Badge('Plus+', JuiceTheme.primaryTangerine)
+                  ],
+                  if (!user.isPremium && user.premiumRequested) ...[
+                    const SizedBox(width: 4),
+                    _Badge('Req+', Colors.blue)
                   ],
                 ])),
                 DataCell(Text(user.email ?? '—',
