@@ -8,6 +8,6 @@ services:
     plan: free
     envVars:
       - key: NOTIFY_API_KEY
-        generateValue: true        # Render auto-generates a secure random value
+        value: cUyczwQ8y7UWO64_5Y9_u5N2V37FxhUC
       - key: FIREBASE_SERVICE_ACCOUNT
         sync: false                # You paste this manually in the Render dashboard

@@ -13,7 +13,7 @@ class NotifyService {
   // ── Configuration ─────────────────────────────────────────────────────────
   // Replace these after deploying server to Render.com
   static const String _serverUrl = 'https://juicedates-notify.onrender.com';
-  static const String _apiKey    = 'REPLACE_WITH_YOUR_NOTIFY_API_KEY';
+  static const String _apiKey    = 'cUyczwQ8y7UWO64_5Y9_u5N2V37FxhUC';
 
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -74,7 +74,6 @@ class NotifyService {
   // ── Internal ──────────────────────────────────────────────────────────────
 
   Future<void> _post(String path, Map<String, dynamic> body) async {
-    if (_apiKey == 'REPLACE_WITH_YOUR_NOTIFY_API_KEY') return; // not configured yet
     try {
       await http.post(
         Uri.parse('$_serverUrl$path'),
