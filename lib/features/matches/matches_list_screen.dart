@@ -4,6 +4,7 @@ import '../../core/network/firestore_service.dart';
 import '../../core/theme/juice_theme.dart';
 import '../../models/user_models.dart';
 import '../chat/single_chat_screen.dart';
+import '../home/user_profile_screen.dart';
 
 class MatchesListScreen extends StatelessWidget {
   const MatchesListScreen({super.key});
@@ -52,6 +53,7 @@ class MatchesListScreen extends StatelessWidget {
               final match = matches[index];
               final partnerName = match.getPartnerName(uid);
               final photoUrl = match.getPartnerPhoto(uid);
+              final partnerUid = match.getPartnerUid(uid);
 
               return Card(
                 child: ListTile(
@@ -61,19 +63,49 @@ class MatchesListScreen extends StatelessWidget {
                       builder: (_) => SingleChatScreen(
                         name: partnerName,
                         matchId: match.matchId,
-                        partnerUid: match.getPartnerUid(uid),
+                        partnerUid: partnerUid,
                       ),
                     ),
                   ),
-                  leading: CircleAvatar(
-                    backgroundColor: JuiceTheme.primaryTangerine,
-                    backgroundImage:
-                        photoUrl != null && photoUrl.isNotEmpty
-                            ? NetworkImage(photoUrl)
-                            : null,
-                    child: photoUrl == null || photoUrl.isEmpty
-                        ? const Icon(Icons.person, color: Colors.white)
-                        : null,
+                  leading: GestureDetector(
+                    onTap: () async {
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (_) => const Center(
+                            child: CircularProgressIndicator()),
+                      );
+                      final partnerUser =
+                          await service.getUserOnce(partnerUid);
+                      if (!context.mounted) return;
+                      Navigator.pop(context);
+                      if (partnerUser != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => UserProfileScreen(
+                              user: partnerUser,
+                              sparksScore: match.sparksScore,
+                            ),
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Could not load profile')),
+                        );
+                      }
+                    },
+                    child: CircleAvatar(
+                      backgroundColor: JuiceTheme.primaryTangerine,
+                      backgroundImage:
+                          photoUrl != null && photoUrl.isNotEmpty
+                              ? NetworkImage(photoUrl)
+                              : null,
+                      child: photoUrl == null || photoUrl.isEmpty
+                          ? const Icon(Icons.person, color: Colors.white)
+                          : null,
+                    ),
                   ),
                   title: Text(partnerName,
                       style: const TextStyle(fontWeight: FontWeight.bold)),

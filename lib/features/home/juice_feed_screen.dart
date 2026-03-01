@@ -6,6 +6,7 @@ import '../../core/network/firestore_service.dart';
 import '../../core/utils/juice_engine.dart';
 import '../../models/user_models.dart';
 import '../../widgets/juice_card.dart';
+import 'user_profile_screen.dart';
 
 class JuiceFeedScreen extends StatefulWidget {
   const JuiceFeedScreen({super.key});
@@ -176,7 +177,19 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
             final sparks = _currentUser != null
                 ? JuiceEngine.computeSparks(_currentUser!.juiceProfile, user.juiceProfile)
                 : 0.0;
-            return JuiceCard(user: user, sparksScore: sparks);
+            return JuiceCard(
+              user: user,
+              sparksScore: sparks,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => UserProfileScreen(
+                    user: user,
+                    sparksScore: sparks,
+                  ),
+                ),
+              ),
+            );
           },
           onSwipe: _onSwipe,
           onEnd: () => setState(() => _feedUsers = []),

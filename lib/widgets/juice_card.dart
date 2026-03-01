@@ -6,8 +6,9 @@ import '../models/user_models.dart';
 class JuiceCard extends StatelessWidget {
   final JuiceUser user;
   final double sparksScore;
+  final VoidCallback? onTap;
 
-  const JuiceCard({super.key, required this.user, this.sparksScore = 0});
+  const JuiceCard({super.key, required this.user, this.sparksScore = 0, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +16,9 @@ class JuiceCard extends StatelessWidget {
         ? user.photos.first
         : user.photoUrl;
 
-    return Card(
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
       clipBehavior: Clip.antiAlias,
       child: Stack(
         fit: StackFit.expand,
@@ -145,6 +148,7 @@ class JuiceCard extends StatelessWidget {
             ),
         ],
       ),
+    ),
     );
   }
 
