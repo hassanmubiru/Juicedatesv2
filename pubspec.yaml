@@ -21,7 +21,6 @@ dependencies:
   image_picker: ^1.1.2
   cached_network_image: ^3.4.1
   flutter_card_swiper: ^7.0.0
-  agora_rtc_engine: ^6.3.2
   permission_handler: ^11.3.1
   # google_sign_in removed
   intl: ^0.19.0
