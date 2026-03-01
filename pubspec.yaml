@@ -1,6 +1,6 @@
 name: juicedates
 description: Values dating revolution - 85% reply rate
-version: 1.0.1+3
+version: 1.0.4+4
 environment:
   sdk: '>=3.5.4 <4.0.0'
 
