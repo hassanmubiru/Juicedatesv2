@@ -2,7 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
     function isSignedIn() {
       return request.auth != null;
     }
@@ -20,25 +19,18 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid in matchData.users;
     }
 
-    // ── Users ─────────────────────────────────────────────────────────────────
-    // Authenticated users can read any profile (required for the feed).
-    // Only the owner can write their own document; admins can update ban status.
+    // Users: any authenticated user can read; owner writes own doc; admin manages all
     match /users/{userId} {
       allow read: if isSignedIn();
-
-      // Owner can update anything except isAdmin/isBanned (prevent self-promotion)
+      allow create: if isOwner(userId);
       allow update: if isOwner(userId) &&
         !('isAdmin' in request.resource.data.diff(resource.data).affectedKeys()) &&
         !('isBanned' in request.resource.data.diff(resource.data).affectedKeys());
-
-      allow create: if isOwner(userId);
-
-      // Admins can toggle isBanned and isAdmin
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
 
-    // ── Matches ───────────────────────────────────────────────────────────────
+    // Matches: only participants can read/update; signed-in user can create if they are in the match
     match /matches/{matchId} {
       allow read: if isMatchParticipant(resource.data);
       allow create: if isSignedIn() && request.auth.uid in request.resource.data.users;
@@ -46,36 +38,35 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // ── Messages ──────────────────────────────────────────────────────────────
+    // Messages: only match participants can read/create; immutable
     match /matches/{matchId}/messages/{messageId} {
       allow read: if isSignedIn() &&
         request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.users;
-
       allow create: if isSignedIn() &&
         request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.users &&
         request.resource.data.senderId == request.auth.uid;
-
-      allow update, delete: if false; // messages are immutable
+      allow update, delete: if false;
     }
 
-    // ── Events ────────────────────────────────────────────────────────────────
+    // Events: all signed-in users can read and RSVP; only admins can create/delete/fully update
     match /events/{eventId} {
       allow read: if isSignedIn();
-      // Only admins and Cloud Functions (server SDK) can write
-      allow write: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() ||
+        (isSignedIn() &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['attendeeUids', 'attendees']));
     }
 
-    // ── Reports ───────────────────────────────────────────────────────────────
+    // Reports: anyone authenticated can file; only admins can read/resolve
     match /reports/{reportId} {
-      // Anyone authenticated can file a report
       allow create: if isSignedIn() &&
         request.resource.data.reporterUid == request.auth.uid;
-      // Only admins can read or resolve reports
       allow read, update: if isAdmin();
       allow delete: if false;
     }
 
-    // ── Announcements ─────────────────────────────────────────────────────────
+    // Announcements: all authenticated can read; only admins write
     match /announcements/{id} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
