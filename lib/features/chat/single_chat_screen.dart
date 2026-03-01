@@ -197,6 +197,24 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.error_outline_rounded,
+                              size: 48, color: Colors.grey),
+                          const SizedBox(height: 12),
+                          Text('${snapshot.error}',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                  );
+                }
                 final messages = snapshot.data ?? [];
                 if (messages.isNotEmpty) _scrollToBottom();
 
