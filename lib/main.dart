@@ -16,6 +16,7 @@ import 'features/onboarding/quiz_screen.dart';
 import 'features/onboarding/juice_summary.dart';
 import 'features/onboarding/profile_setup.dart';
 import 'features/premium/premium_filters_screen.dart';
+import 'features/premium/premium_paywall_screen.dart';
 import 'features/premium/settings_screen.dart';
 import 'features/premium/edit_profile_screen.dart';
 import 'features/calling/video_call_screen.dart';
@@ -184,6 +185,7 @@ class _JuiceDatesAppState extends State<JuiceDatesApp> {
             '/settings': (context) => const SettingsScreen(),
             '/edit-profile': (context) => const EditProfileScreen(),
             '/filters': (context) => const PremiumFiltersScreen(),
+            '/premium-paywall': (context) => const PremiumPaywallScreen(),
             '/video-call': (context) => const VideoCallScreen(),
             '/audio-call': (context) => const AudioCallScreen(),
             '/admin': (context) => const AdminShell(),

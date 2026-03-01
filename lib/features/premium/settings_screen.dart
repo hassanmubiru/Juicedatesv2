@@ -17,7 +17,8 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isDark = false;
   bool _isAdmin = false;
-  bool _invisibleMode = false;
+  bool _isPremium = false;
+  bool _invisibleMode = true;
   bool _newSparks = true;
 
   @override
@@ -43,7 +44,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (uid == null) return;
     final user = await FirestoreService().getUserOnce(uid);
     if (mounted && user != null) {
-      setState(() => _isAdmin = user.isAdmin);
+      setState(() {
+        _isAdmin = user.isAdmin;
+        _isPremium = user.isPremium;
+      });
     }
   }
 
@@ -174,12 +178,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const _SectionHeader(title: 'Premium'),
           ListTile(
-            leading: const Icon(Icons.star_outline,
-                color: JuiceTheme.primaryTangerine),
+            leading: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                gradient: _isPremium ? JuiceTheme.primaryGradient : null,
+                color: _isPremium ? null : Colors.grey[200],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                _isPremium ? Icons.star_rounded : Icons.star_outline_rounded,
+                color: _isPremium ? Colors.white : JuiceTheme.primaryTangerine,
+                size: 20,
+              ),
+            ),
             title: const Text('Juice Plus+'),
-            subtitle: const Text('Unlock Video Calls & Spark Filters'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: _showJuicePlus,
+            subtitle: Text(
+              _isPremium ? 'Active — all perks unlocked' : 'Unlock Spark Filters & more',
+            ),
+            trailing: _isPremium
+                ? Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: JuiceTheme.primaryTangerine.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'Active',
+                      style: TextStyle(
+                        color: JuiceTheme.primaryTangerine,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  )
+                : const Icon(Icons.chevron_right),
+            onTap: () => Navigator.pushNamed(context, '/premium-paywall'),
           ),
           const _SectionHeader(title: 'Privacy & Safety'),
           SwitchListTile(

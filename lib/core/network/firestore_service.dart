@@ -310,6 +310,13 @@ class FirestoreService {
     await _db.collection('users').doc(uid).update({'isPremium': makePremium});
   }
 
+  Future<void> requestPremium(String uid) async {
+    await _db
+        .collection('users')
+        .doc(uid)
+        .update({'premiumRequested': true});
+  }
+
   Future<void> deleteUserAccount(String uid) async {
     await _db.collection('users').doc(uid).delete();
   }

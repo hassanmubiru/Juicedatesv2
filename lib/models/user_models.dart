@@ -13,6 +13,7 @@ class JuiceUser {
   final JuiceProfile juiceProfile;
   final String juiceSummary;
   final bool isPremium;
+  final bool premiumRequested;
   final List<String> likedUids;
   final List<String> passedUids;
   final List<String> blockedUids;
@@ -34,6 +35,7 @@ class JuiceUser {
     required this.juiceProfile,
     required this.juiceSummary,
     this.isPremium = false,
+    this.premiumRequested = false,
     this.likedUids = const [],
     this.passedUids = const [],
     this.blockedUids = const [],
@@ -56,6 +58,7 @@ class JuiceUser {
         'juiceProfile': juiceProfile.toJson(),
         'juiceSummary': juiceSummary,
         'isPremium': isPremium,
+        'premiumRequested': premiumRequested,
         'likedUids': likedUids,
         'passedUids': passedUids,
         'blockedUids': blockedUids,
@@ -80,6 +83,7 @@ class JuiceUser {
       juiceProfile: JuiceProfile.fromJson(data['juiceProfile'] ?? {}),
       juiceSummary: data['juiceSummary'] ?? '',
       isPremium: data['isPremium'] ?? false,
+      premiumRequested: data['premiumRequested'] ?? false,
       likedUids: List<String>.from(data['likedUids'] ?? []),
       passedUids: List<String>.from(data['passedUids'] ?? []),
       blockedUids: List<String>.from(data['blockedUids'] ?? []),
