@@ -100,61 +100,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showJuicePlus() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: JuiceTheme.primaryGradient,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.star_rounded, color: Colors.white, size: 36),
-            ),
-            const SizedBox(height: 16),
-            const Text('Juice Plus+',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            const Text(
-              'Unlock Video Calls, Spark Filters, and priority matching.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: JuiceTheme.primaryTangerine,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30)),
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                  _showComingSoon('Juice Plus+');
-                },
-                child: const Text('Coming Soon',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16)),
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
