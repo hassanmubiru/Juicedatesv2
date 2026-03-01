@@ -149,11 +149,13 @@
   <p class="tagline">Where Values Create Chemistry ✨<br/>Real connections. Not just matches.</p>
   <a class="download-btn" id="dl-btn"
      href="https://github.com/hassanmubiru/Juicedatesv2/releases/download/v1.0.3/app-release.apk"
-     download="JuiceDates-v1.0.3.apk">
+     download="JuiceDates-v1.0.3.apk"
+     onclick="trackDownload()">
     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 16l-6-6h4V4h4v6h4l-6 6zm-8 2h16v2H4v-2z"/></svg>
     Download APK &middot; Beta v1.0.3
   </a>
   <div class="file-meta">Android 6.0+ &middot; 64.5 MB &middot; Free</div>
+  <div class="file-meta" style="margin-top:6px;" id="dl-count"></div>
 </div>
 
 <section id="screenshots">
@@ -359,6 +361,36 @@
 </footer>
 
 <script>
+  // Download click tracking
+  var FS_BASE = 'https://firestore.googleapis.com/v1/projects/juicedates-2ebf0/databases/(default)/documents';
+
+  function trackDownload() {
+    fetch(FS_BASE + ':commit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        writes: [{
+          transform: {
+            document: 'projects/juicedates-2ebf0/databases/(default)/documents/stats/downloads',
+            fieldTransforms: [{ fieldPath: 'count', increment: { integerValue: '1' } }]
+          }
+        }]
+      })
+    }).catch(function(){});
+  }
+
+  function loadDownloadCount() {
+    fetch(FS_BASE + '/stats/downloads')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        var count = d.fields && d.fields.count && (d.fields.count.integerValue || d.fields.count.doubleValue);
+        if (count && +count > 0) {
+          document.getElementById('dl-count').textContent = '📥 ' + (+count).toLocaleString() + ' download' + (+count === 1 ? '' : 's') + ' so far';
+        }
+      }).catch(function(){});
+  }
+  loadDownloadCount();
+
   // Stars
   let currentRating = 0;
   function setRating(val) {

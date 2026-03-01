@@ -85,5 +85,11 @@ service cloud.firestore {
         && request.resource.data.rating <= 5;
       allow update, delete: if false;
     }
+
+    // Public stats (download counter) — anyone can read; only count field can be written
+    match /stats/{statId} {
+      allow read: if true;
+      allow write: if request.resource.data.keys().hasOnly(['count']);
+    }
   }
 }
