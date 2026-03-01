@@ -302,6 +302,10 @@ class FirestoreService {
     await _db.collection('users').doc(uid).update({'isBanned': false});
   }
 
+  Future<void> toggleAdmin(String uid, bool makeAdmin) async {
+    await _db.collection('users').doc(uid).update({'isAdmin': makeAdmin});
+  }
+
   Future<void> deleteUserAccount(String uid) async {
     await _db.collection('users').doc(uid).delete();
   }

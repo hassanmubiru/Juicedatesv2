@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/network/firestore_service.dart';
 import '../../core/theme/juice_theme.dart';
 
@@ -16,7 +17,6 @@ class _AdminNotificationsScreenState
   final _bodyCtrl = TextEditingController();
   final _service = FirestoreService();
   bool _sending = false;
-  final List<Map<String, String>> _history = [];
 
   Future<void> _send() async {
     if (_titleCtrl.text.trim().isEmpty || _bodyCtrl.text.trim().isEmpty) {
@@ -28,24 +28,19 @@ class _AdminNotificationsScreenState
     try {
       await _service.sendAnnouncement(
           _titleCtrl.text.trim(), _bodyCtrl.text.trim());
-      _history.insert(0, {
-        'title': _titleCtrl.text.trim(),
-        'body': _bodyCtrl.text.trim(),
-        'time': 'just now',
-      });
       _titleCtrl.clear();
       _bodyCtrl.clear();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Announcement saved! FCM will broadcast it.'),
+              content: Text('Announcement sent via Render server!'),
               backgroundColor: Colors.green),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Failed: $e')));
       }
     } finally {
       if (mounted) setState(() => _sending = false);
@@ -76,7 +71,7 @@ class _AdminNotificationsScreenState
           ),
           const SizedBox(height: 4),
           const Text(
-            'Saved to Firestore — a Cloud Function delivers via FCM',
+            'Delivered to all users via FCM through the Render server',
             style: TextStyle(color: Colors.grey, fontSize: 12),
             textAlign: TextAlign.center,
           ),
@@ -120,34 +115,68 @@ class _AdminNotificationsScreenState
                   borderRadius: BorderRadius.circular(12)),
             ),
           ),
-          if (_history.isNotEmpty) ...[
-            const SizedBox(height: 32),
-            const Text('Sent This Session',
-                style: TextStyle(
-                    fontWeight: FontWeight.bold, color: Colors.grey)),
-            const SizedBox(height: 8),
-            ..._history.map((n) => Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  child: ListTile(
-                    leading: const Icon(Icons.notifications_rounded,
-                        color: JuiceTheme.primaryTangerine),
-                    title: Text(n['title']!,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600)),
-                    subtitle: Text(n['body']!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
-                    trailing: Text(n['time']!,
-                        style: const TextStyle(
-                            fontSize: 11, color: Colors.grey)),
-                  ),
-                )),
-          ],
+          const SizedBox(height: 32),
+          const Text('Announcement History',
+              style:
+                  TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+          const SizedBox(height: 8),
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('announcements')
+                .orderBy('timestamp', descending: true)
+                .limit(20)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                    child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                ));
+              }
+              final docs = snapshot.data?.docs ?? [];
+              if (docs.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Text('No announcements sent yet.',
+                      style: TextStyle(color: Colors.grey)),
+                );
+              }
+              return Column(
+                children: docs.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final ts = data['timestamp'];
+                  String timeStr = '';
+                  if (ts is Timestamp) {
+                    final dt = ts.toDate();
+                    timeStr =
+                        '${dt.day}/${dt.month}/${dt.year}  ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
+                  }
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                    child: ListTile(
+                      leading: const Icon(Icons.notifications_rounded,
+                          color: JuiceTheme.primaryTangerine),
+                      title: Text(data['title'] ?? '',
+                          style:
+                              const TextStyle(fontWeight: FontWeight.w600)),
+                      subtitle: Text(data['body'] ?? '',
+                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                      trailing: Text(timeStr,
+                          style: const TextStyle(
+                              fontSize: 11, color: Colors.grey)),
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+          ),
           const SizedBox(height: 80),
         ],
       ),
     );
   }
 }
+

@@ -18,12 +18,14 @@ class AdminShell extends StatefulWidget {
 class _AdminShellState extends State<AdminShell> {
   int _currentIndex = 0;
 
-  final _screens = const [
-    AdminDashboardScreen(),
-    AdminUsersScreen(),
-    AdminReportsScreen(),
-    AdminEventsScreen(),
-    AdminNotificationsScreen(),
+  void _setTab(int index) => setState(() => _currentIndex = index);
+
+  late final List<Widget> _screens = [
+    AdminDashboardScreen(onNavigateTo: _setTab),
+    const AdminUsersScreen(),
+    const AdminReportsScreen(),
+    const AdminEventsScreen(),
+    const AdminNotificationsScreen(),
   ];
 
   static const _labels = ['Dashboard', 'Users', 'Reports', 'Events', 'Notify'];

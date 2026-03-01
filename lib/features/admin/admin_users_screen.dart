@@ -116,6 +116,16 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
               SnackBar(content: Text('${user.displayName} unbanned')));
         }
         break;
+      case 'toggleAdmin':
+        final makeAdmin = !user.isAdmin;
+        await _service.toggleAdmin(user.uid, makeAdmin);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(makeAdmin
+                  ? '${user.displayName} is now an admin'
+                  : 'Admin removed from ${user.displayName}')));
+        }
+        break;
       case 'delete':
         final confirm = await showDialog<bool>(
           context: context,
@@ -304,6 +314,16 @@ class _ActionMenu extends StatelessWidget {
                 : Icons.block_rounded,
             user.isBanned ? 'Unban User' : 'Ban User',
             color: user.isBanned ? Colors.green : Colors.orange,
+          ),
+        ),
+        PopupMenuItem(
+          value: 'toggleAdmin',
+          child: _MenuItem(
+            user.isAdmin
+                ? Icons.shield_rounded
+                : Icons.admin_panel_settings_rounded,
+            user.isAdmin ? 'Remove Admin' : 'Make Admin',
+            color: Colors.purple,
           ),
         ),
         PopupMenuItem(

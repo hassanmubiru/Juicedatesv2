@@ -182,42 +182,82 @@ class _EventFormDialog extends StatefulWidget {
 
 class _EventFormDialogState extends State<_EventFormDialog> {
   late final TextEditingController _title;
-  late final TextEditingController _category;
-  late final TextEditingController _date;
   late final TextEditingController _location;
   late final TextEditingController _description;
+  String _selectedCategory = 'Lifestyle';
+  DateTime? _selectedDate;
   bool _saving = false;
+
+  static const _categories = [
+    'Family', 'Career', 'Lifestyle', 'Ethics', 'Fun', 'Other'
+  ];
 
   @override
   void initState() {
     super.initState();
     _title = TextEditingController(text: widget.event?.title ?? '');
-    _category = TextEditingController(text: widget.event?.category ?? '');
-    _date = TextEditingController(text: widget.event?.date ?? '');
     _location = TextEditingController(
         text: widget.event?.location ?? 'Kampala, Uganda');
     _description =
         TextEditingController(text: widget.event?.description ?? '');
+    _selectedCategory = (widget.event?.category.isNotEmpty == true &&
+            _categories.contains(widget.event?.category))
+        ? widget.event!.category
+        : 'Lifestyle';
+    if (widget.event?.date.isNotEmpty == true) {
+      try {
+        _selectedDate = DateTime.parse(widget.event!.date);
+      } catch (_) {
+        _selectedDate = null;
+      }
+    }
   }
 
   @override
   void dispose() {
     _title.dispose();
-    _category.dispose();
-    _date.dispose();
     _location.dispose();
     _description.dispose();
     super.dispose();
   }
 
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? now.add(const Duration(days: 7)),
+      firstDate: now,
+      lastDate: DateTime(now.year + 3),
+    );
+    if (picked != null) setState(() => _selectedDate = picked);
+  }
+
+  String get _formattedDate {
+    if (_selectedDate == null) return '';
+    final months = [
+      '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${months[_selectedDate!.month]} ${_selectedDate!.day}, ${_selectedDate!.year}';
+  }
+
   Future<void> _save() async {
-    if (_title.text.trim().isEmpty) return;
+    if (_title.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Event title is required')));
+      return;
+    }
+    if (_selectedDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please pick a date')));
+      return;
+    }
     setState(() => _saving = true);
     try {
       final data = {
         'title': _title.text.trim(),
-        'category': _category.text.trim(),
-        'date': _date.text.trim(),
+        'category': _selectedCategory,
+        'date': _selectedDate!.toIso8601String(),
         'location': _location.text.trim(),
         'description': _description.text.trim(),
       };
@@ -226,12 +266,12 @@ class _EventFormDialogState extends State<_EventFormDialog> {
       } else {
         await widget.service.createEvent(JuiceEvent(
           id: '',
-          title: data['title']!,
-          category: data['category']!,
-          date: data['date']!,
+          title: data['title'] as String,
+          category: data['category'] as String,
+          date: data['date'] as String,
           attendees: 0,
-          location: data['location']!,
-          description: data['description']!,
+          location: data['location'] as String,
+          description: data['description'] as String,
         ));
       }
       if (mounted) Navigator.pop(context);
@@ -250,10 +290,36 @@ class _EventFormDialogState extends State<_EventFormDialog> {
           children: [
             _field(_title, 'Title *'),
             const SizedBox(height: 8),
-            _field(_category, 'Category',
-                hint: 'Family, Career, Lifestyle…'),
+            DropdownButtonFormField<String>(
+              initialValue: _selectedCategory,
+              decoration: InputDecoration(
+                labelText: 'Category',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                isDense: true,
+              ),
+              items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+              onChanged: (v) => setState(() => _selectedCategory = v ?? _selectedCategory),
+            ),
             const SizedBox(height: 8),
-            _field(_date, 'Date', hint: 'e.g. Oct 24, 2026'),
+            InkWell(
+              onTap: _pickDate,
+              borderRadius: BorderRadius.circular(8),
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  labelText: 'Date *',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  isDense: true,
+                  suffixIcon: const Icon(Icons.calendar_today_rounded, size: 18),
+                ),
+                child: Text(
+                  _selectedDate == null ? 'Tap to pick a date' : _formattedDate,
+                  style: TextStyle(
+                    color: _selectedDate == null ? Colors.grey : null,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+            ),
             const SizedBox(height: 8),
             _field(_location, 'Location'),
             const SizedBox(height: 8),
@@ -262,8 +328,7 @@ class _EventFormDialogState extends State<_EventFormDialog> {
               maxLines: 3,
               decoration: InputDecoration(
                 labelText: 'Description',
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
             ),
           ],

@@ -101,6 +101,7 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('Juice Feed'),
         actions: [
@@ -161,10 +162,7 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
         ),
       );
     }
-    return Center(
-      child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.7,
-        child: CardSwiper(
+    return CardSwiper(
           controller: _cardController,
           cardsCount: _feedUsers.length,
           allowedSwipeDirection: const AllowedSwipeDirection.all(),
@@ -193,8 +191,6 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
           },
           onSwipe: _onSwipe,
           onEnd: () => setState(() => _feedUsers = []),
-        ),
-      ),
-    );
+        );
   }
 }

@@ -3,7 +3,8 @@ import '../../core/network/firestore_service.dart';
 import '../../core/theme/juice_theme.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
-  const AdminDashboardScreen({super.key});
+  final void Function(int)? onNavigateTo;
+  const AdminDashboardScreen({super.key, this.onNavigateTo});
 
   @override
   Widget build(BuildContext context) {
@@ -86,6 +87,7 @@ class AdminDashboardScreen extends StatelessWidget {
                   icon: Icons.person_search_rounded,
                   label: 'View Users',
                   color: Colors.blue,
+                  onTap: () => onNavigateTo?.call(1),
                 ),
               ),
               SizedBox(
@@ -94,6 +96,7 @@ class AdminDashboardScreen extends StatelessWidget {
                   icon: Icons.add_circle_outline_rounded,
                   label: 'Add Event',
                   color: JuiceTheme.juiceGreen,
+                  onTap: () => onNavigateTo?.call(3),
                 ),
               ),
               SizedBox(
@@ -102,6 +105,7 @@ class AdminDashboardScreen extends StatelessWidget {
                   icon: Icons.flag_rounded,
                   label: 'Review Reports',
                   color: Colors.orange,
+                  onTap: () => onNavigateTo?.call(2),
                 ),
               ),
               SizedBox(
@@ -110,6 +114,7 @@ class AdminDashboardScreen extends StatelessWidget {
                   icon: Icons.campaign_rounded,
                   label: 'Send Announcement',
                   color: Colors.purple,
+                  onTap: () => onNavigateTo?.call(4),
                 ),
               ),
             ],
@@ -169,27 +174,33 @@ class _QuickActionCard extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
+  final VoidCallback? onTap;
 
   const _QuickActionCard({
     required this.icon,
     required this.label,
     required this.color,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(height: 8),
-            Text(label,
-                style: TextStyle(
-                    fontWeight: FontWeight.w600, color: color)),
-          ],
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 28),
+              const SizedBox(height: 8),
+              Text(label,
+                  style: TextStyle(
+                      fontWeight: FontWeight.w600, color: color)),
+            ],
+          ),
         ),
       ),
     );
