@@ -169,6 +169,44 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
+              'Your Name',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _nameController,
+              textCapitalization: TextCapitalization.words,
+              decoration: InputDecoration(
+                labelText: 'Display Name',
+                prefixIcon: const Icon(Icons.person_outline,
+                    color: JuiceTheme.primaryTangerine),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'About You',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _bioController,
+              maxLines: 3,
+              maxLength: 200,
+              decoration: InputDecoration(
+                labelText: 'Bio (optional)',
+                alignLabelWithHint: true,
+                prefixIcon: const Icon(Icons.edit_note_rounded,
+                    color: JuiceTheme.primaryTangerine),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
               'Add your best photos',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
