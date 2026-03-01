@@ -71,6 +71,7 @@ class FirestoreService {
   Stream<List<JuiceUser>> getFeedUsers(String uid, {int limit = 60}) {
     return _db
         .collection('users')
+        .where('uid', isNotEqualTo: uid)
         .where('isBanned', isEqualTo: false)
         .limit(limit)
         .snapshots()
