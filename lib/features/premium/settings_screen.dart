@@ -17,12 +17,25 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isDark = false;
   bool _isAdmin = false;
+  bool _invisibleMode = false;
+  bool _newSparks = true;
 
   @override
   void initState() {
     super.initState();
     _isDark = themeModeNotifier.value == ThemeMode.dark;
+    _loadPrefs();
     _loadAdminStatus();
+  }
+
+  Future<void> _loadPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _invisibleMode = prefs.getBool('invisibleMode') ?? false;
+        _newSparks = prefs.getBool('newSparks') ?? true;
+      });
+    }
   }
 
   Future<void> _loadAdminStatus() async {
@@ -41,6 +54,104 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await prefs.setBool('darkMode', val);
   }
 
+  Future<void> _toggleInvisible(bool val) async {
+    setState(() => _invisibleMode = val);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('invisibleMode', val);
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      await FirestoreService().updateUserProfile(uid, {'invisibleMode': val});
+    }
+  }
+
+  Future<void> _toggleSparks(bool val) async {
+    setState(() => _newSparks = val);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('newSparks', val);
+  }
+
+  Future<void> _clearGpsCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('cached_city');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('GPS cache cleared.')),
+      );
+    }
+  }
+
+  void _showComingSoon(String feature) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(feature),
+        content: const Text('This feature is coming soon! Stay tuned for updates.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showJuicePlus() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: JuiceTheme.primaryGradient,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.star_rounded, color: Colors.white, size: 36),
+            ),
+            const SizedBox(height: 16),
+            const Text('Juice Plus+',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            const Text(
+              'Unlock Video Calls, Spark Filters, and priority matching.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: JuiceTheme.primaryTangerine,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30)),
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                  _showComingSoon('Juice Plus+');
+                },
+                child: const Text('Coming Soon',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16)),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -54,12 +165,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.pushNamed(context, '/edit-profile'),
           ),
+          ListTile(
+            leading: const Icon(Icons.verified_user_outlined),
+            title: const Text('Juice Verification'),
+            subtitle: const Text('Get a verified badge'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showComingSoon('Juice Verification'),
+          ),
+          const _SectionHeader(title: 'Premium'),
+          ListTile(
+            leading: const Icon(Icons.star_outline,
+                color: JuiceTheme.primaryTangerine),
+            title: const Text('Juice Plus+'),
+            subtitle: const Text('Unlock Video Calls & Spark Filters'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: _showJuicePlus,
+          ),
           const _SectionHeader(title: 'Privacy & Safety'),
           SwitchListTile(
             value: _isDark,
             onChanged: _toggleDark,
             title: const Text('Dark Mode'),
             secondary: const Icon(Icons.dark_mode_outlined),
+          ),
+          SwitchListTile(
+            value: _invisibleMode,
+            onChanged: _toggleInvisible,
+            title: const Text('Invisible Mode'),
+            subtitle: const Text('Hide your online status'),
+            secondary: const Icon(Icons.visibility_off_outlined),
+          ),
+          ListTile(
+            leading: const Icon(Icons.location_off_outlined),
+            title: const Text('Clear GPS Cache'),
+            subtitle: const Text('Remove saved location data'),
+            onTap: _clearGpsCache,
+          ),
+          const _SectionHeader(title: 'Notifications'),
+          SwitchListTile(
+            value: _newSparks,
+            onChanged: _toggleSparks,
+            title: const Text('New Sparks'),
+            subtitle: const Text('Notify me when I get a new match'),
+            secondary: const Icon(Icons.flash_on_rounded),
           ),
           const SizedBox(height: 12),
           if (_isAdmin) ...[
@@ -87,12 +235,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: TextButton(
               onPressed: () {
                 context.read<AuthBloc>().add(AuthLoggedOut());
-                Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
+                Navigator.pushNamedAndRemoveUntil(
+                    context, '/login', (_) => false);
               },
-              child: const Text('Logout', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+              child: const Text('Logout',
+                  style: TextStyle(
+                      color: Colors.red, fontWeight: FontWeight.bold)),
             ),
           ),
-          const Center(child: Text('v1.0.0 (JuiceDates Alpha)', style: TextStyle(color: Colors.grey, fontSize: 12))),
+          const Center(
+              child: Text('v1.0.0 (JuiceDates Alpha)',
+                  style: TextStyle(color: Colors.grey, fontSize: 12))),
           const SizedBox(height: 32),
         ],
       ),
@@ -110,7 +263,11 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
       child: Text(
         title.toUpperCase(),
-        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1),
+        style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey,
+            letterSpacing: 1),
       ),
     );
   }
