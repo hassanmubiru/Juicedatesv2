@@ -103,7 +103,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
             builder: (_) => _UserDetailDialog(user: user));
         break;
       case 'ban':
-        await _service.banUser(user.uid);
+        await _service.banUser(user.uid, user.displayName);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('${user.displayName} banned')));

@@ -4,6 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/user_models.dart';
 import '../utils/juice_engine.dart';
 import 'cloudinary_service.dart';
+import 'notify_service.dart';
+
+final _notify = NotifyService.instance;
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -152,7 +155,14 @@ class FirestoreService {
       'lastMessageTime': FieldValue.serverTimestamp(),
     });
     final doc = await ref.get();
-    return JuiceMatch.fromFirestore(doc);
+    final match = JuiceMatch.fromFirestore(doc);
+    // Push notifications (fire-and-forget)
+    _notify.notifyMatch(
+      uid1: user1.uid, uid2: user2.uid,
+      name1: user1.displayName, name2: user2.displayName,
+      matchId: match.matchId, sparksScore: sparksScore,
+    );
+    return match;
   }
 
   Stream<List<JuiceMatch>> getMatches(String uid) {
@@ -194,7 +204,12 @@ class FirestoreService {
             .toList());
   }
 
-  Future<void> sendMessage(String matchId, JuiceMessage message) async {
+  Future<void> sendMessage(
+    String matchId,
+    JuiceMessage message, {
+    String? recipientUid,
+    String? senderName,
+  }) async {
     final batch = _db.batch();
     final msgRef = _db
         .collection('matches')
@@ -215,6 +230,16 @@ class FirestoreService {
       'messageCount': FieldValue.increment(1),
     });
     await batch.commit();
+    // Push notification to recipient (fire-and-forget)
+    if (recipientUid != null && message.text.isNotEmpty) {
+      _notify.notifyMessage(
+        senderUid: message.senderId,
+        senderName: senderName ?? 'Your match',
+        recipientUid: recipientUid,
+        matchId: matchId,
+        text: message.text,
+      );
+    }
   }
 
   // ── Events ────────────────────────────────────────────────────────────────
@@ -267,8 +292,10 @@ class FirestoreService {
         .map((s) => s.docs.map((d) => JuiceUser.fromFirestore(d)).toList());
   }
 
-  Future<void> banUser(String uid) async {
+  Future<void> banUser(String uid, String displayName) async {
     await _db.collection('users').doc(uid).update({'isBanned': true});
+    // Delete matches + notify admins via server (fire-and-forget)
+    _notify.notifyBan(uid: uid, displayName: displayName);
   }
 
   Future<void> unbanUser(String uid) async {
@@ -310,5 +337,7 @@ class FirestoreService {
       'timestamp': FieldValue.serverTimestamp(),
       'sentBy': FirebaseAuth.instance.currentUser?.uid,
     });
+    // Broadcast FCM to all users via server (fire-and-forget)
+    _notify.notifyAnnouncement(title: title, body: body);
   }
 }

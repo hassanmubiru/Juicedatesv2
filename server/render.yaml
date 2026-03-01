@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: juicedates-notify
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    plan: free
+    envVars:
+      - key: NOTIFY_API_KEY
+        generateValue: true        # Render auto-generates a secure random value
+      - key: FIREBASE_SERVICE_ACCOUNT
+        sync: false                # You paste this manually in the Render dashboard

@@ -28,6 +28,7 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final _service = FirestoreService();
   late final String _myUid;
+  String _myName = '';
   int _currentTier = 1;
   double _progression = 0.0;
   int _messageCount = 0;
@@ -49,6 +50,7 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
         _messageCount = match.messageCount;
         _progression = (_messageCount % 10) / 10.0;
         _partnerPhotoUrl = match.getPartnerPhoto(_myUid);
+        _myName = match.userNames[_myUid] ?? '';
       });
     }
   }
@@ -120,6 +122,8 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
         tierUnlocked: _currentTier,
         timestamp: DateTime.now(),
       ),
+      recipientUid: widget.partnerUid,
+      senderName: _myName.isNotEmpty ? _myName : 'Your match',
     );
 
     setState(() {
