@@ -271,16 +271,21 @@ class FirestoreService {
 
   Future<Map<String, int>> getAdminStats() async {
     final results = await Future.wait([
-      _db.collection('users').count().get(),
-      _db.collection('matches').count().get(),
-      _db.collection('reports').where('resolved', isEqualTo: false).count().get(),
-      _db.collection('events').count().get(),
+      _db.collection('users').get(),
+      _db.collection('matches').get(),
+      _db.collection('reports').where('resolved', isEqualTo: false).get(),
+      _db.collection('events').get(),
+      _db.collection('users')
+          .where('premiumRequested', isEqualTo: true)
+          .where('isPremium', isEqualTo: false)
+          .get(),
     ]);
     return {
-      'users': results[0].count ?? 0,
-      'matches': results[1].count ?? 0,
-      'reports': results[2].count ?? 0,
-      'events': results[3].count ?? 0,
+      'users': results[0].docs.length,
+      'matches': results[1].docs.length,
+      'reports': results[2].docs.length,
+      'events': results[3].docs.length,
+      'plusRequests': results[4].docs.length,
     };
   }
 

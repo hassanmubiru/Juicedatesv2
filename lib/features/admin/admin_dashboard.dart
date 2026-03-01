@@ -2,14 +2,30 @@ import 'package:flutter/material.dart';
 import '../../core/network/firestore_service.dart';
 import '../../core/theme/juice_theme.dart';
 
-class AdminDashboardScreen extends StatelessWidget {
+class AdminDashboardScreen extends StatefulWidget {
   final void Function(int)? onNavigateTo;
   const AdminDashboardScreen({super.key, this.onNavigateTo});
 
   @override
-  Widget build(BuildContext context) {
-    final service = FirestoreService();
+  State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
+}
 
+class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
+  final _service = FirestoreService();
+  late Future<Map<String, int>> _statsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _statsFuture = _service.getAdminStats();
+  }
+
+  void _refresh() {
+    setState(() => _statsFuture = _service.getAdminStats());
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
       final isWide = constraints.maxWidth >= 700;
       final padding = isWide ? 32.0 : 16.0;
@@ -19,51 +35,121 @@ class AdminDashboardScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 8),
-          Text(
-            'Overview',
-            style: Theme.of(context)
-                .textTheme
-                .titleLarge
-                ?.copyWith(fontWeight: FontWeight.bold),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Overview',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              IconButton(
+                icon: const Icon(Icons.refresh_rounded),
+                tooltip: 'Refresh stats',
+                onPressed: _refresh,
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           FutureBuilder<Map<String, int>>(
-            future: service.getAdminStats(),
+            future: _statsFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const SizedBox(
                     height: 200,
                     child: Center(child: CircularProgressIndicator()));
               }
+              if (snapshot.hasError) {
+                return Container(
+                  height: 100,
+                  alignment: Alignment.center,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.red),
+                      const SizedBox(height: 8),
+                      Text('Failed to load stats',
+                          style: TextStyle(color: Colors.red[700])),
+                      TextButton(
+                          onPressed: _refresh,
+                          child: const Text('Retry')),
+                    ],
+                  ),
+                );
+              }
               final stats = snapshot.data ?? {};
-              return GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: isWide ? 4 : 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: isWide ? 1.4 : 1.2,
+              final plusReqs = stats['plusRequests'] ?? 0;
+              return Column(
                 children: [
-                  _StatCard(
-                      label: 'Total Users',
-                      value: '${stats['users'] ?? 0}',
-                      icon: Icons.people_rounded,
-                      color: Colors.blue),
-                  _StatCard(
-                      label: 'Matches Made',
-                      value: '${stats['matches'] ?? 0}',
-                      icon: Icons.favorite_rounded,
-                      color: JuiceTheme.primaryTangerine),
-                  _StatCard(
-                      label: 'Open Reports',
-                      value: '${stats['reports'] ?? 0}',
-                      icon: Icons.flag_rounded,
-                      color: Colors.orange),
-                  _StatCard(
-                      label: 'Events',
-                      value: '${stats['events'] ?? 0}',
-                      icon: Icons.event_rounded,
-                      color: JuiceTheme.juiceGreen),
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: isWide ? 4 : 2,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: isWide ? 1.4 : 1.2,
+                    children: [
+                      _StatCard(
+                          label: 'Total Users',
+                          value: '${stats['users'] ?? 0}',
+                          icon: Icons.people_rounded,
+                          color: Colors.blue),
+                      _StatCard(
+                          label: 'Matches Made',
+                          value: '${stats['matches'] ?? 0}',
+                          icon: Icons.favorite_rounded,
+                          color: JuiceTheme.primaryTangerine),
+                      _StatCard(
+                          label: 'Open Reports',
+                          value: '${stats['reports'] ?? 0}',
+                          icon: Icons.flag_rounded,
+                          color: Colors.orange),
+                      _StatCard(
+                          label: 'Events',
+                          value: '${stats['events'] ?? 0}',
+                          icon: Icons.event_rounded,
+                          color: JuiceTheme.juiceGreen),
+                    ],
+                  ),
+                  if (plusReqs > 0) ...[  
+                    const SizedBox(height: 12),
+                    InkWell(
+                      onTap: () => widget.onNavigateTo?.call(1),
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: JuiceTheme.primaryTangerine
+                              .withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                              color: JuiceTheme.primaryTangerine
+                                  .withValues(alpha: 0.35)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.star_rounded,
+                                color: JuiceTheme.primaryTangerine, size: 20),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                '$plusReqs user${plusReqs == 1 ? '' : 's'} waiting for Plus+ approval',
+                                style: const TextStyle(
+                                    color: JuiceTheme.primaryTangerine,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13),
+                              ),
+                            ),
+                            const Icon(Icons.chevron_right_rounded,
+                                color: JuiceTheme.primaryTangerine, size: 18),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               );
             },
@@ -87,7 +173,7 @@ class AdminDashboardScreen extends StatelessWidget {
                   icon: Icons.person_search_rounded,
                   label: 'View Users',
                   color: Colors.blue,
-                  onTap: () => onNavigateTo?.call(1),
+                  onTap: () => widget.onNavigateTo?.call(1),
                 ),
               ),
               SizedBox(
@@ -96,7 +182,7 @@ class AdminDashboardScreen extends StatelessWidget {
                   icon: Icons.add_circle_outline_rounded,
                   label: 'Add Event',
                   color: JuiceTheme.juiceGreen,
-                  onTap: () => onNavigateTo?.call(3),
+                  onTap: () => widget.onNavigateTo?.call(3),
                 ),
               ),
               SizedBox(
@@ -105,7 +191,7 @@ class AdminDashboardScreen extends StatelessWidget {
                   icon: Icons.flag_rounded,
                   label: 'Review Reports',
                   color: Colors.orange,
-                  onTap: () => onNavigateTo?.call(2),
+                  onTap: () => widget.onNavigateTo?.call(2),
                 ),
               ),
               SizedBox(
@@ -114,7 +200,7 @@ class AdminDashboardScreen extends StatelessWidget {
                   icon: Icons.campaign_rounded,
                   label: 'Send Announcement',
                   color: Colors.purple,
-                  onTap: () => onNavigateTo?.call(4),
+                  onTap: () => widget.onNavigateTo?.call(4),
                 ),
               ),
             ],
