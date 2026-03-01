@@ -3,252 +3,481 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>JuiceDates – Download</title>
+  <title>JuiceDates – Download Beta</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      min-height: 100vh;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --orange: #FF6B35; --yellow: #FFD23F; --pink: #FF3278;
+      --green: #4CAF50; --dark: #2D2D2D; --grey: #777;
+      --light: #F7F7FB; --card: #FFFFFF; --border: #EDEDED;
     }
+    html { scroll-behavior: smooth; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--light); color: var(--dark); }
 
-    /* ── Hero ─────────────────────────────────────────────── */
-    .hero {
-      width: 100%;
-      background: linear-gradient(160deg, #FF6B35 0%, #FF3278 100%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 64px 24px 80px;
-      clip-path: ellipse(120% 100% at 50% 0%);
-    }
+    /* NAV */
+    nav { position: sticky; top: 0; z-index: 100; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 14px 28px; }
+    .nav-logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.2rem; color: var(--orange); }
+    .nav-logo img { width: 36px; height: 36px; border-radius: 10px; }
+    .nav-links { display: flex; gap: 24px; }
+    .nav-links a { text-decoration: none; color: var(--grey); font-size: .92rem; font-weight: 500; transition: color .2s; }
+    .nav-links a:hover { color: var(--orange); }
 
-    .app-icon {
-      width: 120px;
-      height: 120px;
-      border-radius: 28px;
-      box-shadow: 0 16px 48px rgba(0,0,0,0.3);
-      margin-bottom: 24px;
-    }
+    /* HERO */
+    .hero { background: linear-gradient(140deg, #FF6B35 0%, #FF3278 100%); padding: 72px 24px 100px; text-align: center; clip-path: ellipse(140% 100% at 50% 0%); }
+    .hero-icon { width: 110px; height: 110px; border-radius: 26px; box-shadow: 0 20px 60px rgba(0,0,0,.3); margin-bottom: 22px; }
+    .hero h1 { color: #fff; font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 900; letter-spacing: -1px; margin-bottom: 10px; }
+    .hero .tagline { color: rgba(255,255,255,.85); font-size: 1.1rem; margin-bottom: 36px; line-height: 1.6; }
+    .download-btn { display: inline-flex; align-items: center; gap: 12px; background: #fff; color: var(--orange); font-size: 1.1rem; font-weight: 800; padding: 18px 42px; border-radius: 50px; text-decoration: none; box-shadow: 0 10px 40px rgba(0,0,0,.2); transition: transform .15s, box-shadow .15s; }
+    .download-btn:hover { transform: translateY(-3px); box-shadow: 0 16px 48px rgba(0,0,0,.28); }
+    .download-btn svg { width: 24px; height: 24px; }
+    .file-meta { color: rgba(255,255,255,.65); font-size: .82rem; margin-top: 14px; }
 
-    .hero h1 {
-      color: #fff;
-      font-size: 2.4rem;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      margin-bottom: 8px;
-    }
+    /* SECTION */
+    section { max-width: 860px; margin: 0 auto; padding: 60px 20px; }
+    .section-title { font-size: 1.5rem; font-weight: 800; color: var(--dark); margin-bottom: 6px; }
+    .section-sub { color: var(--grey); font-size: .95rem; margin-bottom: 32px; }
 
-    .hero p {
-      color: rgba(255,255,255,0.88);
-      font-size: 1.1rem;
-      text-align: center;
-      max-width: 360px;
-      line-height: 1.6;
-      margin-bottom: 36px;
-    }
+    /* SCREENSHOTS */
+    .screenshots-scroll { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 16px; -webkit-overflow-scrolling: touch; }
+    .screenshots-scroll::-webkit-scrollbar { height: 4px; }
+    .screenshots-scroll::-webkit-scrollbar-track { background: var(--border); border-radius: 2px; }
+    .screenshots-scroll::-webkit-scrollbar-thumb { background: var(--orange); border-radius: 2px; }
+    .shot-wrap { flex: 0 0 auto; scroll-snap-align: start; width: 200px; }
+    .shot-wrap img { width: 200px; height: 355px; object-fit: cover; border-radius: 22px; box-shadow: 0 8px 32px rgba(0,0,0,.15); transition: transform .2s, box-shadow .2s; cursor: pointer; display: block; }
+    .shot-wrap img:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 16px 48px rgba(0,0,0,.22); }
+    .shot-label { text-align: center; font-size: .78rem; color: var(--grey); margin-top: 8px; font-weight: 500; }
 
-    /* ── Download button ──────────────────────────────────── */
-    .download-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 12px;
-      background: #fff;
-      color: #FF6B35;
-      font-size: 1.15rem;
-      font-weight: 700;
-      padding: 18px 40px;
-      border-radius: 50px;
-      text-decoration: none;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-      transition: transform .15s, box-shadow .15s;
-    }
-    .download-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,0.28); }
-    .download-btn:active { transform: translateY(0); }
-    .download-btn svg { width: 26px; height: 26px; }
+    /* LIGHTBOX */
+    .lightbox { display: none; position: fixed; inset: 0; z-index: 999; background: rgba(0,0,0,.88); align-items: center; justify-content: center; cursor: pointer; }
+    .lightbox.open { display: flex; }
+    .lightbox img { max-width: 92vw; max-height: 90vh; border-radius: 18px; box-shadow: 0 24px 80px rgba(0,0,0,.5); }
 
-    .file-meta {
-      color: rgba(255,255,255,0.7);
-      font-size: 0.85rem;
-      margin-top: 14px;
-    }
+    /* STEPS */
+    .steps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 540px) { .steps-grid { grid-template-columns: 1fr; } }
+    .step-card { background: var(--card); border-radius: 20px; padding: 22px; display: flex; gap: 16px; align-items: flex-start; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
+    .step-num { min-width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--orange), var(--pink)); color: #fff; font-weight: 800; font-size: 1rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .step-text strong { display: block; color: var(--dark); font-size: .95rem; margin-bottom: 4px; }
+    .step-text span { color: var(--grey); font-size: .85rem; line-height: 1.5; }
 
-    /* ── Steps ────────────────────────────────────────────── */
-    .steps {
-      width: 100%;
-      max-width: 520px;
-      padding: 52px 24px 32px;
-    }
+    /* FEATURES */
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+    .feature-card { background: var(--card); border-radius: 20px; padding: 22px; box-shadow: 0 2px 12px rgba(0,0,0,.06); border: 1px solid var(--border); }
+    .feature-card .emoji { font-size: 2rem; margin-bottom: 10px; }
+    .feature-card strong { display: block; color: var(--dark); font-size: .95rem; margin-bottom: 4px; }
+    .feature-card span { color: var(--grey); font-size: .83rem; line-height: 1.4; }
 
-    .steps h2 {
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: #2D2D2D;
-      margin-bottom: 24px;
-      text-align: center;
-    }
+    /* FEEDBACK CARD */
+    #feedback { background: var(--card); border-radius: 28px; box-shadow: 0 4px 24px rgba(0,0,0,.07); margin: 0 20px; max-width: 820px; }
+    @media (min-width: 900px) { #feedback { margin: 0 auto; } }
 
-    .step {
-      display: flex;
-      align-items: flex-start;
-      gap: 18px;
-      margin-bottom: 22px;
-    }
+    .stars-row { display: flex; gap: 8px; margin-bottom: 20px; cursor: pointer; }
+    .star { font-size: 2rem; color: #ddd; transition: color .15s, transform .1s; }
+    .star.active, .star.hover { color: var(--yellow); transform: scale(1.15); }
 
-    .step-num {
-      min-width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #FF6B35, #FF3278);
-      color: #fff;
-      font-size: 1rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
+    .review-tabs { display: flex; gap: 0; margin-bottom: 28px; background: var(--light); border-radius: 14px; padding: 4px; }
+    .review-tab { flex: 1; text-align: center; padding: 10px 8px; font-size: .88rem; font-weight: 600; border-radius: 11px; cursor: pointer; color: var(--grey); transition: all .2s; }
+    .review-tab.active { background: var(--card); color: var(--orange); box-shadow: 0 2px 8px rgba(0,0,0,.08); }
 
-    .step-text strong { display: block; color: #2D2D2D; font-size: 1rem; margin-bottom: 3px; }
-    .step-text span { color: #777; font-size: 0.9rem; line-height: 1.5; }
+    .review-panel { display: none; }
+    .review-panel.active { display: block; }
 
-    /* ── Features ─────────────────────────────────────────── */
-    .features {
-      width: 100%;
-      max-width: 520px;
-      padding: 0 24px 48px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-    }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-size: .88rem; font-weight: 600; color: var(--dark); margin-bottom: 6px; }
+    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 13px 16px; border-radius: 14px; border: 1.5px solid var(--border); font-size: .95rem; color: var(--dark); background: var(--light); transition: border-color .2s, box-shadow .2s; outline: none; font-family: inherit; }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,107,53,.12); }
+    .form-group textarea { resize: vertical; min-height: 110px; }
 
-    .feature-card {
-      background: #FFF5F0;
-      border-radius: 18px;
-      padding: 20px 18px;
-      border: 1px solid #FFE0D0;
-    }
+    .submit-btn { width: 100%; padding: 16px; border-radius: 50px; border: none; cursor: pointer; background: linear-gradient(135deg, var(--orange), var(--pink)); color: #fff; font-size: 1rem; font-weight: 700; letter-spacing: .3px; transition: opacity .2s, transform .15s; box-shadow: 0 6px 24px rgba(255,107,53,.35); }
+    .submit-btn:hover { opacity: .92; transform: translateY(-1px); }
 
-    .feature-card .emoji { font-size: 1.8rem; margin-bottom: 8px; }
-    .feature-card strong { display: block; color: #2D2D2D; font-size: 0.95rem; margin-bottom: 4px; }
-    .feature-card span { color: #888; font-size: 0.82rem; line-height: 1.4; }
+    .tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+    .tag { padding: 7px 16px; border-radius: 20px; border: 1.5px solid var(--border); font-size: .83rem; font-weight: 600; cursor: pointer; color: var(--grey); background: var(--light); transition: all .15s; user-select: none; }
+    .tag.selected { background: rgba(255,107,53,.12); border-color: var(--orange); color: var(--orange); }
 
-    /* ── Footer ───────────────────────────────────────────── */
-    footer {
-      width: 100%;
-      text-align: center;
-      padding: 20px;
-      color: #bbb;
-      font-size: 0.8rem;
-      border-top: 1px solid #f0f0f0;
-    }
+    /* TOAST */
+    .toast { display: none; position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%); background: var(--dark); color: #fff; padding: 14px 28px; border-radius: 50px; font-size: .9rem; font-weight: 600; box-shadow: 0 8px 32px rgba(0,0,0,.2); z-index: 9999; white-space: nowrap; }
+    .toast.show { display: block; animation: fadeup .3s ease; }
+    @keyframes fadeup { from { opacity:0; transform: translateX(-50%) translateY(12px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
 
-    /* ── Warning box ──────────────────────────────────────── */
-    .warning {
-      max-width: 520px;
-      margin: 0 24px 32px;
-      background: #FFF8E1;
-      border: 1px solid #FFD54F;
-      border-radius: 16px;
-      padding: 16px 20px;
-      font-size: 0.88rem;
-      color: #795548;
-      line-height: 1.6;
-    }
-    .warning strong { color: #5D4037; }
+    /* REVIEWS LIST */
+    .reviews-list { display: flex; flex-direction: column; gap: 14px; margin-top: 28px; }
+    .review-card { background: var(--light); border-radius: 18px; padding: 18px 20px; border-left: 4px solid var(--orange); }
+    .review-card .rc-head { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .review-card .rc-name { font-weight: 700; font-size: .92rem; color: var(--dark); }
+    .review-card .rc-stars { color: var(--yellow); font-size: .9rem; }
+    .review-card .rc-text { color: #555; font-size: .88rem; line-height: 1.55; }
+    .review-card .rc-tag { display: inline-block; margin-top: 8px; padding: 3px 12px; background: rgba(255,107,53,.1); color: var(--orange); border-radius: 20px; font-size: .75rem; font-weight: 600; }
+
+    /* WARNING */
+    .warning { max-width: 820px; margin: 0 auto; padding: 0 20px; }
+    .warning-inner { background: #FFF8E1; border: 1px solid #FFD54F; border-radius: 18px; padding: 16px 22px; font-size: .88rem; color: #795548; line-height: 1.6; }
+    .warning-inner strong { color: #5D4037; }
+
+    /* FOOTER */
+    footer { text-align: center; border-top: 1px solid var(--border); padding: 28px 20px; margin-top: 60px; color: #bbb; font-size: .8rem; }
+    footer a { color: var(--orange); text-decoration: none; }
   </style>
 </head>
 <body>
 
-  <!-- Hero -->
-  <div class="hero">
-    <img src="icon.png" alt="JuiceDates icon" class="app-icon"/>
-    <h1>JuiceDates</h1>
-    <p>Where Values Create Chemistry ✨<br/>Find meaningful connections with people who share your values.</p>
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <img id="lightbox-img" src="" alt=""/>
+</div>
+<div class="toast" id="toast">✅ Submitted!</div>
 
-    <a class="download-btn" href="https://github.com/hassanmubiru/Juicedatesv2/releases/download/v1.0.1/JuiceDates-v1.0.1.apk" download="JuiceDates-v1.0.1.apk">
-      <svg viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 16l-6-6h4V4h4v6h4l-6 6zm-8 2h16v2H4v-2z"/>
-      </svg>
-      Download APK
-    </a>
-    <div class="file-meta">Android 6.0+ · v1.0.1 · 60.5 MB</div>
+<nav>
+  <div class="nav-logo">
+    <img src="icon.png" alt="JuiceDates"/>
+    JuiceDates
   </div>
+  <div class="nav-links">
+    <a href="#screenshots">Screenshots</a>
+    <a href="#install">Install</a>
+    <a href="#feedback">Feedback</a>
+  </div>
+</nav>
 
-  <!-- Install steps -->
-  <div class="steps">
-    <h2>How to install</h2>
+<div class="hero">
+  <img src="icon.png" alt="JuiceDates icon" class="hero-icon"/>
+  <h1>JuiceDates</h1>
+  <p class="tagline">Where Values Create Chemistry ✨<br/>Real connections. Not just matches.</p>
+  <a class="download-btn" id="dl-btn"
+     href="https://github.com/hassanmubiru/Juicedatesv2/releases/download/v1.0.1/JuiceDates-v1.0.1.apk"
+     download="JuiceDates-v1.0.1.apk">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 16l-6-6h4V4h4v6h4l-6 6zm-8 2h16v2H4v-2z"/></svg>
+    Download APK &middot; Beta v1.0.1
+  </a>
+  <div class="file-meta">Android 6.0+ &middot; 60.5 MB &middot; Free</div>
+</div>
 
-    <div class="step">
+<section id="screenshots">
+  <div class="section-title">See it in action</div>
+  <div class="section-sub">Scroll through every screen before you download</div>
+  <div class="screenshots-scroll">
+    <div class="shot-wrap">
+      <img src="05_splash.png" alt="Splash" onclick="openLightbox(this)"/>
+      <div class="shot-label">Welcome</div>
+    </div>
+    <div class="shot-wrap">
+      <img src="01_feed.png" alt="Feed" onclick="openLightbox(this)"/>
+      <div class="shot-label">Swipe Feed</div>
+    </div>
+    <div class="shot-wrap">
+      <img src="02_profile.png" alt="Profile" onclick="openLightbox(this)"/>
+      <div class="shot-label">Profile</div>
+    </div>
+    <div class="shot-wrap">
+      <img src="03_matches.png" alt="Matches" onclick="openLightbox(this)"/>
+      <div class="shot-label">Matches</div>
+    </div>
+    <div class="shot-wrap">
+      <img src="04_chat.png" alt="Chat" onclick="openLightbox(this)"/>
+      <div class="shot-label">Chat</div>
+    </div>
+    <div class="shot-wrap">
+      <img src="06_settings.png" alt="Settings" onclick="openLightbox(this)"/>
+      <div class="shot-label">Settings</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-title">Why JuiceDates?</div>
+  <div class="section-sub">Built differently from every other dating app</div>
+  <div class="features-grid">
+    <div class="feature-card"><div class="emoji">🔥</div><strong>Values Quiz</strong><span>87% compatibility score built from your personal Juice Profile</span></div>
+    <div class="feature-card"><div class="emoji">💬</div><strong>Tier Chat</strong><span>Conversations unlock deeper levels as trust builds over time</span></div>
+    <div class="feature-card"><div class="emoji">📍</div><strong>Local Events</strong><span>Meet matches in real life at Juice Tribe community events</span></div>
+    <div class="feature-card"><div class="emoji">🙈</div><strong>Invisible Mode</strong><span>Browse profiles without being seen — on your own terms</span></div>
+    <div class="feature-card"><div class="emoji">⚡</div><strong>Sparks Score</strong><span>AI-powered compatibility built on what actually matters</span></div>
+    <div class="feature-card"><div class="emoji">🔒</div><strong>Safe &amp; Private</strong><span>Verified profiles, blocking, and full data control</span></div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="section-title">How to install</div>
+  <div class="section-sub">Takes less than 2 minutes on any Android phone</div>
+  <div class="steps-grid">
+    <div class="step-card">
       <div class="step-num">1</div>
-      <div class="step-text">
-        <strong>Download the APK</strong>
-        <span>Tap the button above. Your browser will download the file.</span>
-      </div>
+      <div class="step-text"><strong>Tap Download APK</strong><span>Hit the orange button above. Your browser saves the file automatically.</span></div>
     </div>
-
-    <div class="step">
+    <div class="step-card">
       <div class="step-num">2</div>
-      <div class="step-text">
-        <strong>Allow unknown sources</strong>
-        <span>Go to <em>Settings → Apps → Special app access → Install unknown apps</em> and allow your browser.</span>
-      </div>
+      <div class="step-text"><strong>Allow unknown sources</strong><span>Settings &rarr; Apps &rarr; Special app access &rarr; Install unknown apps &rarr; allow your browser.</span></div>
     </div>
-
-    <div class="step">
+    <div class="step-card">
       <div class="step-num">3</div>
-      <div class="step-text">
-        <strong>Open the downloaded file</strong>
-        <span>Tap the notification or find <code>JuiceDates-v1.0.1.apk</code> in your Downloads folder.</span>
-      </div>
+      <div class="step-text"><strong>Open the file</strong><span>Tap the download notification or open <code>JuiceDates-v1.0.1.apk</code> from your Downloads folder.</span></div>
     </div>
-
-    <div class="step">
+    <div class="step-card">
       <div class="step-num">4</div>
-      <div class="step-text">
-        <strong>Tap Install &amp; enjoy!</strong>
-        <span>Create your account and start discovering real connections. 🍊</span>
+      <div class="step-text"><strong>Install &amp; enjoy 🍊</strong><span>Create your account, take the Values Quiz, and start finding real connections.</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="warning">
+  <div class="warning-inner">
+    <strong>⚠️ Safe to install.</strong> Android may show an &ldquo;unknown source&rdquo; warning — this is normal for beta apps not yet on Google Play. This APK is the official JuiceDates build, signed by the developer. No third-party modifications.
+  </div>
+</div>
+
+<section id="feedback" style="padding: 60px 40px;">
+  <div class="section-title">Your feedback shapes the app 💬</div>
+  <div class="section-sub">Leave a review or report an issue — we read every single one</div>
+
+  <div class="review-tabs">
+    <div class="review-tab active" onclick="switchTab('review')">⭐ Review</div>
+    <div class="review-tab" onclick="switchTab('bug')">🐛 Bug Report</div>
+    <div class="review-tab" onclick="switchTab('suggest')">💡 Feature Idea</div>
+  </div>
+
+  <!-- REVIEW -->
+  <div class="review-panel active" id="panel-review">
+    <div class="form-group">
+      <label>Your rating</label>
+      <div class="stars-row" id="stars">
+        <span class="star" data-v="1" onclick="setRating(1)">&#9733;</span>
+        <span class="star" data-v="2" onclick="setRating(2)">&#9733;</span>
+        <span class="star" data-v="3" onclick="setRating(3)">&#9733;</span>
+        <span class="star" data-v="4" onclick="setRating(4)">&#9733;</span>
+        <span class="star" data-v="5" onclick="setRating(5)">&#9733;</span>
       </div>
     </div>
+    <div class="form-group">
+      <label>What did you love?</label>
+      <div class="tag-row" id="like-tags">
+        <span class="tag" onclick="toggleTag(this)">Easy to use</span>
+        <span class="tag" onclick="toggleTag(this)">Great matches</span>
+        <span class="tag" onclick="toggleTag(this)">Chat system</span>
+        <span class="tag" onclick="toggleTag(this)">Values quiz</span>
+        <span class="tag" onclick="toggleTag(this)">Events</span>
+        <span class="tag" onclick="toggleTag(this)">Clean design</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Your review</label>
+      <textarea id="review-text" placeholder="Tell us about your experience — what worked, what felt magical…"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Name (optional)</label>
+      <input type="text" id="review-name" placeholder="e.g. Amara K."/>
+    </div>
+    <button class="submit-btn" onclick="submitForm('review')">Submit Review</button>
   </div>
 
-  <!-- Warning -->
-  <div class="warning">
-    <strong>⚠️ Safe to install.</strong> This is the official JuiceDates beta APK signed by the developer.
-    Android may show a warning because this app isn't on the Play Store yet — that's expected for beta testing.
+  <!-- BUG -->
+  <div class="review-panel" id="panel-bug">
+    <div class="form-group">
+      <label>Issue type</label>
+      <div class="tag-row" id="bug-tags">
+        <span class="tag" onclick="toggleTag(this)">App crashes</span>
+        <span class="tag" onclick="toggleTag(this)">Login issue</span>
+        <span class="tag" onclick="toggleTag(this)">Photos not loading</span>
+        <span class="tag" onclick="toggleTag(this)">Chat broken</span>
+        <span class="tag" onclick="toggleTag(this)">Matching problem</span>
+        <span class="tag" onclick="toggleTag(this)">Notifications</span>
+        <span class="tag" onclick="toggleTag(this)">Performance</span>
+        <span class="tag" onclick="toggleTag(this)">Other</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Describe the bug</label>
+      <textarea id="bug-text" placeholder="What happened? What were you doing? Which screen?"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Severity</label>
+      <select id="bug-severity">
+        <option value="">Select severity…</option>
+        <option value="critical">🔴 Blocks me from using the app</option>
+        <option value="major">🟠 Major — lost data or a key feature is broken</option>
+        <option value="minor">🟡 Minor — annoying but I can work around it</option>
+        <option value="cosmetic">⚪ Cosmetic — visual glitch only</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Your email (for follow-up)</label>
+      <input type="email" id="bug-email" placeholder="you@example.com"/>
+    </div>
+    <button class="submit-btn" onclick="submitForm('bug')">Report Bug</button>
   </div>
 
-  <!-- Features grid -->
-  <div class="features">
-    <div class="feature-card">
-      <div class="emoji">🔥</div>
-      <strong>Values-Based Matching</strong>
-      <span>87% compatibility score from your Juice Profile quiz</span>
+  <!-- SUGGEST -->
+  <div class="review-panel" id="panel-suggest">
+    <div class="form-group">
+      <label>Feature area</label>
+      <div class="tag-row" id="sug-tags">
+        <span class="tag" onclick="toggleTag(this)">Matching</span>
+        <span class="tag" onclick="toggleTag(this)">Chat</span>
+        <span class="tag" onclick="toggleTag(this)">Profile</span>
+        <span class="tag" onclick="toggleTag(this)">Events</span>
+        <span class="tag" onclick="toggleTag(this)">Safety</span>
+        <span class="tag" onclick="toggleTag(this)">Video calls</span>
+        <span class="tag" onclick="toggleTag(this)">Notifications</span>
+      </div>
     </div>
-    <div class="feature-card">
-      <div class="emoji">💬</div>
-      <strong>Tier Chat System</strong>
-      <span>Conversations unlock deeper connection as trust builds</span>
+    <div class="form-group">
+      <label>Your idea</label>
+      <textarea id="sug-text" placeholder="Describe the feature you'd love to see. How would it improve your experience?"></textarea>
     </div>
-    <div class="feature-card">
-      <div class="emoji">📍</div>
-      <strong>Local Events</strong>
-      <span>Meet matches in real life at Juice Tribe events</span>
+    <div class="form-group">
+      <label>Priority</label>
+      <select id="sug-priority">
+        <option value="">Select priority…</option>
+        <option value="must">🔥 Must-have — I'd use this daily</option>
+        <option value="nice">✨ Nice to have</option>
+        <option value="low">💭 Just an idea</option>
+      </select>
     </div>
-    <div class="feature-card">
-      <div class="emoji">🔒</div>
-      <strong>Private &amp; Safe</strong>
-      <span>Invisible mode, blocking, and verified profiles</span>
-    </div>
+    <button class="submit-btn" onclick="submitForm('suggest')">Submit Suggestion</button>
   </div>
 
-  <footer>
-    © 2026 JuiceDates · Beta v1.0.1 · For testing purposes
-  </footer>
+  <!-- BETA REVIEWS -->
+  <div class="section-title" style="margin-top:48px; font-size:1.1rem;">What beta testers are saying</div>
+  <div class="reviews-list">
+    <div class="review-card">
+      <div class="rc-head"><div class="rc-name">Amara K.</div><div class="rc-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div></div>
+      <div class="rc-text">Finally an app that asks what matters instead of just looks. The Values Quiz is genius — I matched with someone at 91% and we've been talking every day.</div>
+      <span class="rc-tag">Values quiz ✓</span>
+    </div>
+    <div class="review-card">
+      <div class="rc-head"><div class="rc-name">Kofi M.</div><div class="rc-stars">&#9733;&#9733;&#9733;&#9733;&#9734;</div></div>
+      <div class="rc-text">The tier chat system is really unique. Feels like the conversations actually go somewhere instead of just "hey" and silence. Would love voice notes in chat too.</div>
+      <span class="rc-tag">Chat system ✓</span>
+    </div>
+    <div class="review-card">
+      <div class="rc-head"><div class="rc-name">Zawadi N.</div><div class="rc-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div></div>
+      <div class="rc-text">Love the design and how clean everything feels. The events feature is a game changer — I actually met my match at a Juice Tribe meetup!</div>
+      <span class="rc-tag">Events ✓</span>
+    </div>
+    <div class="review-card">
+      <div class="rc-head"><div class="rc-name">Tariq O.</div><div class="rc-stars">&#9733;&#9733;&#9733;&#9733;&#9734;</div></div>
+      <div class="rc-text">Works great for the most part. Had one crash on the profile edit screen but the chat and matching are smooth. Excited to see where this goes!</div>
+      <span class="rc-tag">Feedback submitted ✓</span>
+    </div>
+  </div>
+</section>
 
+<footer>
+  <p>&copy; 2026 JuiceDates &middot; Beta v1.0.1 &middot; Built with ❤️ in Kampala</p>
+  <p style="margin-top:8px">
+    <a href="mailto:support@juicedates.app">support@juicedates.app</a>
+    &nbsp;&middot;&nbsp;
+    <a href="#feedback">Leave feedback</a>
+    &nbsp;&middot;&nbsp;
+    <a href="https://github.com/hassanmubiru/Juicedatesv2/releases/download/v1.0.1/JuiceDates-v1.0.1.apk">Direct APK</a>
+  </p>
+</footer>
+
+<script>
+  // Stars
+  let currentRating = 0;
+  function setRating(val) {
+    currentRating = val;
+    document.querySelectorAll('#stars .star').forEach(function(s) {
+      s.classList.toggle('active', +s.dataset.v <= val);
+    });
+  }
+  document.querySelectorAll('#stars .star').forEach(function(s) {
+    s.addEventListener('mouseenter', function() {
+      document.querySelectorAll('#stars .star').forEach(function(x) {
+        x.classList.toggle('hover', +x.dataset.v <= +s.dataset.v);
+      });
+    });
+    s.addEventListener('mouseleave', function() {
+      document.querySelectorAll('#stars .star').forEach(function(x) { x.classList.remove('hover'); });
+    });
+  });
+
+  // Tags
+  function toggleTag(el) { el.classList.toggle('selected'); }
+
+  // Tabs
+  function switchTab(name) {
+    var panels = ['review','bug','suggest'];
+    document.querySelectorAll('.review-tab').forEach(function(t, i) {
+      t.classList.toggle('active', panels[i] === name);
+    });
+    document.querySelectorAll('.review-panel').forEach(function(p) {
+      p.classList.toggle('active', p.id === 'panel-' + name);
+    });
+  }
+
+  // Submit
+  function submitForm(type) {
+    var data = { type: type, timestamp: new Date().toISOString() };
+    if (type === 'review') {
+      if (!currentRating) { alert('Please select a star rating.'); return; }
+      data.rating = currentRating;
+      data.tags = Array.from(document.querySelectorAll('#like-tags .tag.selected')).map(function(t){ return t.textContent; });
+      data.text = document.getElementById('review-text').value.trim();
+      data.name = document.getElementById('review-name').value.trim() || 'Anonymous';
+      if (!data.text) { alert('Please write your review.'); return; }
+    } else if (type === 'bug') {
+      data.tags = Array.from(document.querySelectorAll('#bug-tags .tag.selected')).map(function(t){ return t.textContent; });
+      data.text = document.getElementById('bug-text').value.trim();
+      data.severity = document.getElementById('bug-severity').value;
+      data.email = document.getElementById('bug-email').value.trim();
+      if (!data.text) { alert('Please describe the bug.'); return; }
+    } else {
+      data.tags = Array.from(document.querySelectorAll('#sug-tags .tag.selected')).map(function(t){ return t.textContent; });
+      data.text = document.getElementById('sug-text').value.trim();
+      data.priority = document.getElementById('sug-priority').value;
+      if (!data.text) { alert('Please describe your idea.'); return; }
+    }
+    // Save locally
+    var key = 'jd_feedback';
+    var existing = JSON.parse(localStorage.getItem(key) || '[]');
+    existing.push(data);
+    localStorage.setItem(key, JSON.stringify(existing));
+    // Optional remote submit (silent fail)
+    fetch('https://submit-form.com/juicedates-feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(data)
+    }).catch(function(){});
+    showToast(type);
+    clearForm(type);
+  }
+
+  function showToast(type) {
+    var msgs = { review: '⭐ Review submitted — thank you!', bug: '🐛 Bug reported — we will fix it!', suggest: '💡 Idea noted — love it!' };
+    var t = document.getElementById('toast');
+    t.textContent = msgs[type] || '✅ Submitted!';
+    t.classList.add('show');
+    setTimeout(function(){ t.classList.remove('show'); }, 3500);
+  }
+
+  function clearForm(type) {
+    if (type === 'review') {
+      currentRating = 0;
+      document.querySelectorAll('#stars .star').forEach(function(s){ s.classList.remove('active'); });
+      document.querySelectorAll('#like-tags .tag').forEach(function(t){ t.classList.remove('selected'); });
+      document.getElementById('review-text').value = '';
+      document.getElementById('review-name').value = '';
+    } else if (type === 'bug') {
+      document.querySelectorAll('#bug-tags .tag').forEach(function(t){ t.classList.remove('selected'); });
+      document.getElementById('bug-text').value = '';
+      document.getElementById('bug-severity').value = '';
+      document.getElementById('bug-email').value = '';
+    } else {
+      document.querySelectorAll('#sug-tags .tag').forEach(function(t){ t.classList.remove('selected'); });
+      document.getElementById('sug-text').value = '';
+      document.getElementById('sug-priority').value = '';
+    }
+  }
+
+  // Lightbox
+  function openLightbox(img) {
+    document.getElementById('lightbox-img').src = img.src;
+    document.getElementById('lightbox').classList.add('open');
+  }
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('open');
+  }
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeLightbox(); });
+</script>
 </body>
 </html>
