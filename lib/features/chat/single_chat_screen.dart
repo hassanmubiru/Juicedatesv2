@@ -161,14 +161,22 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
             icon: const Icon(Icons.videocam_rounded),
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const VideoCallScreen()),
+              MaterialPageRoute(
+                  builder: (_) => VideoCallScreen(
+                        name: widget.name,
+                        photoUrl: _partnerPhotoUrl,
+                      )),
             ),
           ),
           IconButton(
             icon: const Icon(Icons.call_rounded),
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const AudioCallScreen()),
+              MaterialPageRoute(
+                  builder: (_) => AudioCallScreen(
+                        name: widget.name,
+                        photoUrl: _partnerPhotoUrl,
+                      )),
             ),
           ),
           if (widget.partnerUid != null)
