@@ -71,8 +71,6 @@ class FirestoreService {
   Stream<List<JuiceUser>> getFeedUsers(String uid, {int limit = 60}) {
     return _db
         .collection('users')
-        .where('uid', isNotEqualTo: uid)
-        .where('isBanned', isEqualTo: false)
         .limit(limit)
         .snapshots()
         .asyncMap((snapshot) async {
@@ -86,7 +84,10 @@ class FirestoreService {
       };
       return snapshot.docs
           .map((doc) => JuiceUser.fromFirestore(doc))
-          .where((u) => !excluded.contains(u.uid) && !u.blockedUids.contains(uid))
+          .where((u) =>
+              !excluded.contains(u.uid) &&
+              !u.blockedUids.contains(uid) &&
+              u.isBanned != true)
           .toList();
     });
   }
