@@ -19,6 +19,7 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
   List<JuiceUser> _feedUsers = [];
   JuiceUser? _currentUser;
   bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -27,18 +28,25 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
   }
 
   Future<void> _loadFeed() async {
+    setState(() { _loading = true; _error = null; });
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
-    _currentUser = await _service.getUserOnce(uid);
-    _service.getFeedUsers(uid).listen((users) {
-      if (mounted) {
-        setState(() {
-          _feedUsers = users;
-          _loading = false;
-        });
-      }
-    });
+    try {
+      _currentUser = await _service.getUserOnce(uid);
+    } catch (e) {
+      if (mounted) setState(() { _loading = false; _error = e.toString(); });
+      return;
+    }
+
+    _service.getFeedUsers(uid).listen(
+      (users) {
+        if (mounted) setState(() { _feedUsers = users; _loading = false; });
+      },
+      onError: (e) {
+        if (mounted) setState(() { _loading = false; _error = e.toString(); });
+      },
+    );
   }
 
   Future<bool> _onSwipe(
