@@ -9,7 +9,7 @@
     :root {
       --orange: #FF6B35; --yellow: #FFD23F; --pink: #FF3278;
       --green: #4CAF50; --dark: #2D2D2D; --grey: #777;
-      --light: #F7F7FB; --card: #FFFFFF; --border: #EDEDED;
+      --light: #F0F0F6; --card: #FFFFFF; --border: #E4E4EC;
     }
     html { scroll-behavior: smooth; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--light); color: var(--dark); }
@@ -33,9 +33,12 @@
     .file-meta { color: rgba(255,255,255,.65); font-size: .82rem; margin-top: 14px; }
 
     /* SECTION */
-    section { max-width: 860px; margin: 0 auto; padding: 60px 20px; }
+    section { max-width: 860px; margin: 0 auto; padding: 40px 20px; }
+    section.alt { max-width: 100%; background: #fff; }
+    section.alt > * { max-width: 860px; margin-left: auto; margin-right: auto; }
+    section.alt .features-grid { max-width: 860px; margin: 0 auto; }
     .section-title { font-size: 1.5rem; font-weight: 800; color: var(--dark); margin-bottom: 6px; }
-    .section-sub { color: var(--grey); font-size: .95rem; margin-bottom: 32px; }
+    .section-sub { color: var(--grey); font-size: .95rem; margin-bottom: 24px; }
 
     /* SCREENSHOTS */
     .screenshots-scroll { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 16px; -webkit-overflow-scrolling: touch; }
@@ -115,7 +118,7 @@
     .warning-inner strong { color: #5D4037; }
 
     /* FOOTER */
-    footer { text-align: center; border-top: 1px solid var(--border); padding: 28px 20px; margin-top: 60px; color: #bbb; font-size: .8rem; }
+    footer { text-align: center; border-top: 1px solid var(--border); padding: 28px 20px; margin-top: 0; color: #bbb; font-size: .8rem; }
     footer a { color: var(--orange); text-decoration: none; }
   </style>
 </head>
@@ -143,12 +146,12 @@
   <h1>JuiceDates</h1>
   <p class="tagline">Where Values Create Chemistry ✨<br/>Real connections. Not just matches.</p>
   <a class="download-btn" id="dl-btn"
-     href="https://github.com/hassanmubiru/Juicedatesv2/releases/download/v1.0.1/JuiceDates-v1.0.1.apk"
-     download="JuiceDates-v1.0.1.apk">
+     href="https://github.com/hassanmubiru/Juicedatesv2/releases/download/v1.0.2/app-release.apk"
+     download="JuiceDates-v1.0.2.apk">
     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 16l-6-6h4V4h4v6h4l-6 6zm-8 2h16v2H4v-2z"/></svg>
-    Download APK &middot; Beta v1.0.1
+    Download APK &middot; Beta v1.0.2
   </a>
-  <div class="file-meta">Android 6.0+ &middot; 60.5 MB &middot; Free</div>
+  <div class="file-meta">Android 6.0+ &middot; 63.6 MB &middot; Free</div>
 </div>
 
 <section id="screenshots">
@@ -182,7 +185,7 @@
   </div>
 </section>
 
-<section>
+<section class="alt" style="padding: 40px 20px;">
   <div class="section-title">Why JuiceDates?</div>
   <div class="section-sub">Built differently from every other dating app</div>
   <div class="features-grid">
@@ -209,7 +212,7 @@
     </div>
     <div class="step-card">
       <div class="step-num">3</div>
-      <div class="step-text"><strong>Open the file</strong><span>Tap the download notification or open <code>JuiceDates-v1.0.1.apk</code> from your Downloads folder.</span></div>
+      <div class="step-text"><strong>Open the file</strong><span>Tap the download notification or open <code>JuiceDates-v1.0.2.apk</code> from your Downloads folder.</span></div>
     </div>
     <div class="step-card">
       <div class="step-num">4</div>
@@ -224,7 +227,7 @@
   </div>
 </div>
 
-<section id="feedback" style="padding: 60px 40px;">
+<section id="feedback" style="padding: 40px 20px;">
   <div class="section-title">Your feedback shapes the app 💬</div>
   <div class="section-sub">Leave a review or report an issue — we read every single one</div>
 
@@ -343,13 +346,13 @@
 </section>
 
 <footer>
-  <p>&copy; 2026 JuiceDates &middot; Beta v1.0.1 &middot; Built with ❤️ in Kampala</p>
+  <p>&copy; 2026 JuiceDates &middot; Beta v1.0.2 &middot; Built with ❤️ in Kampala</p>
   <p style="margin-top:8px">
     <a href="mailto:support@juicedates.app">support@juicedates.app</a>
     &nbsp;&middot;&nbsp;
     <a href="#feedback">Leave feedback</a>
     &nbsp;&middot;&nbsp;
-    <a href="https://github.com/hassanmubiru/Juicedatesv2/releases/download/v1.0.1/JuiceDates-v1.0.1.apk">Direct APK</a>
+    <a href="https://github.com/hassanmubiru/Juicedatesv2/releases/download/v1.0.2/app-release.apk">Direct APK</a>
   </p>
 </footer>
 
