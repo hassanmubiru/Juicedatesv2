@@ -126,6 +126,16 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                   : 'Admin removed from ${user.displayName}')));
         }
         break;
+      case 'togglePremium':
+        final makePremium = !user.isPremium;
+        await _service.togglePremium(user.uid, makePremium);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(makePremium
+                  ? '${user.displayName} is now Juice Plus+'
+                  : 'Juice Plus+ removed from ${user.displayName}')));
+        }
+        break;
       case 'delete':
         final confirm = await showDialog<bool>(
           context: context,
@@ -324,6 +334,16 @@ class _ActionMenu extends StatelessWidget {
                 : Icons.admin_panel_settings_rounded,
             user.isAdmin ? 'Remove Admin' : 'Make Admin',
             color: Colors.purple,
+          ),
+        ),
+        PopupMenuItem(
+          value: 'togglePremium',
+          child: _MenuItem(
+            user.isPremium
+                ? Icons.star_rounded
+                : Icons.star_outline_rounded,
+            user.isPremium ? 'Revoke Plus+' : 'Grant Plus+',
+            color: JuiceTheme.primaryTangerine,
           ),
         ),
         PopupMenuItem(
