@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/network/firestore_service.dart';
 import '../../core/theme/juice_theme.dart';
+import '../../core/utils/location_service.dart';
 import '../../models/user_models.dart';
 import '../../widgets/juice_button.dart';
 
@@ -29,6 +30,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   List<String> _interests = [];
   List<String?> _photoUrls = List.filled(6, null);
   final List<File?> _newPhotos = List.filled(6, null);
+  bool _loadingLocation = false;
 
   final List<String> _availableInterests = [
     'Hiking', 'Reading', 'Cooking', 'Travel', 'Gaming', 'Music',
@@ -59,6 +61,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           i < (user?.photos.length ?? 0) ? user!.photos[i] : null);
       _loading = false;
     });
+  }
+
+  Future<void> _detectCity() async {
+    setState(() => _loadingLocation = true);
+    final city = await LocationService.getCurrentCity();
+    if (mounted) {
+      setState(() => _loadingLocation = false);
+      if (city != null) {
+        _cityCtrl.text = city;
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not detect location. Please check location permissions.')),
+        );
+      }
+    }
   }
 
   Future<void> _pickPhoto(int index) async {
@@ -205,7 +222,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             const SizedBox(height: 24),
             _buildField(_nameCtrl, 'Display Name', Icons.person_rounded),
             const SizedBox(height: 16),
-            _buildField(_cityCtrl, 'City', Icons.location_on_rounded),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildField(_cityCtrl, 'City', Icons.location_on_rounded),
+                ),
+                const SizedBox(width: 8),
+                _loadingLocation
+                    ? const SizedBox(
+                        width: 48, height: 48,
+                        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      )
+                    : IconButton(
+                        tooltip: 'Use my location',
+                        icon: const Icon(Icons.my_location_rounded,
+                            color: JuiceTheme.primaryTangerine),
+                        onPressed: _detectCity,
+                      ),
+              ],
+            ),
             const SizedBox(height: 16),
             _buildField(_ageCtrl, 'Age', Icons.cake_rounded,
                 type: TextInputType.number),
