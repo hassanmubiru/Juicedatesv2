@@ -270,22 +270,32 @@ class FirestoreService {
   // ── Admin ─────────────────────────────────────────────────────────────────
 
   Future<Map<String, int>> getAdminStats() async {
+    Future<int> safeCount(Future<QuerySnapshot> query) async {
+      try {
+        final snap = await query;
+        return snap.docs.length;
+      } catch (_) {
+        return 0;
+      }
+    }
+
     final results = await Future.wait([
-      _db.collection('users').get(),
-      _db.collection('matches').get(),
-      _db.collection('reports').where('resolved', isEqualTo: false).get(),
-      _db.collection('events').get(),
-      _db.collection('users')
+      safeCount(_db.collection('users').get()),
+      safeCount(_db.collection('matches').get()),
+      safeCount(
+          _db.collection('reports').where('resolved', isEqualTo: false).get()),
+      safeCount(_db.collection('events').get()),
+      safeCount(_db
+          .collection('users')
           .where('premiumRequested', isEqualTo: true)
-          .where('isPremium', isEqualTo: false)
-          .get(),
+          .get()),
     ]);
     return {
-      'users': results[0].docs.length,
-      'matches': results[1].docs.length,
-      'reports': results[2].docs.length,
-      'events': results[3].docs.length,
-      'plusRequests': results[4].docs.length,
+      'users': results[0],
+      'matches': results[1],
+      'reports': results[2],
+      'events': results[3],
+      'plusRequests': results[4],
     };
   }
 

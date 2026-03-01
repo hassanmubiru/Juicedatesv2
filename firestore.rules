@@ -32,7 +32,7 @@ service cloud.firestore {
 
     // Matches: only participants can read/update; signed-in user can create if they are in the match
     match /matches/{matchId} {
-      allow read: if isMatchParticipant(resource.data);
+      allow read: if isMatchParticipant(resource.data) || isAdmin();
       allow create: if isSignedIn() && request.auth.uid in request.resource.data.users;
       allow update: if isMatchParticipant(resource.data);
       allow delete: if isAdmin();
