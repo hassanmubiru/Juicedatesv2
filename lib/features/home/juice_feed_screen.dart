@@ -23,6 +23,8 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
   bool _loading = true;
   String? _error;
   StreamSubscription<List<JuiceUser>>? _feedSub;
+  // null = unlimited (premium), int = likes left today
+  int? _likesRemaining;
 
   @override
   void initState() {
@@ -44,7 +46,13 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
       return;
     }
 
-    _feedSub = _service.getFeedUsers(uid).listen(
+    final isPremium = _currentUser?.isPremium ?? false;
+
+    // Load daily likes info for free users
+    final left = await _service.getDailyLikesLeft(uid, isPremium);
+    if (mounted) setState(() => _likesRemaining = left);
+
+    _feedSub = _service.getFeedUsers(uid, isPremium: isPremium).listen(
       (users) {
         if (mounted) setState(() { _feedUsers = users; _loading = false; });
       },
@@ -61,12 +69,45 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
     if (uid == null || _currentUser == null) return true;
 
     if (direction == CardSwiperDirection.right) {
-      final match = await _service.likeUser(_currentUser!, swipedUser);
-      if (match != null && mounted) _showMatchDialog(swipedUser);
+      try {
+        final match = await _service.likeUser(_currentUser!, swipedUser);
+        if (match != null && mounted) _showMatchDialog(swipedUser);
+        // Update remaining count for free users
+        if (_likesRemaining != null && mounted) {
+          setState(() => _likesRemaining = (_likesRemaining! - 1).clamp(0, 999));
+        }
+      } on DailyLimitException {
+        if (mounted) _showDailyLimitDialog();
+        return false; // don't advance the card
+      }
     } else if (direction == CardSwiperDirection.left) {
       await _service.passUser(uid, swipedUser.uid);
     }
     return true;
+  }
+
+  void _showDailyLimitDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Daily limit reached 🍊"),
+        content: const Text(
+            'You\'ve used all 50 free likes for today.\n\nUpgrade to Juice Plus+ for unlimited daily likes!'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Later')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF6B35)),
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/premium-paywall');
+            },
+            child: const Text('Get Plus+', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showMatchDialog(JuiceUser other) {
@@ -143,6 +184,46 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
         ),
       );
     }
+
+    // Free user exhausted daily likes
+    if (_likesRemaining == 0) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('🍊', style: TextStyle(fontSize: 64)),
+              const SizedBox(height: 16),
+              const Text("You've used today's likes!",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center),
+              const SizedBox(height: 8),
+              const Text(
+                  'Free accounts get 50 likes per day.\nCome back tomorrow or upgrade for unlimited.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey)),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF6B35),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30)),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 28, vertical: 14),
+                ),
+                onPressed: () =>
+                    Navigator.pushNamed(context, '/premium-paywall'),
+                child: const Text('Get Juice Plus+',
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     if (_feedUsers.isEmpty) {
       return const Center(
         child: Column(
@@ -162,35 +243,77 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
         ),
       );
     }
-    return CardSwiper(
-          controller: _cardController,
-          cardsCount: _feedUsers.length,
-          allowedSwipeDirection: const AllowedSwipeDirection.all(),
-          numberOfCardsDisplayed:
-              _feedUsers.length >= 3 ? 3 : _feedUsers.length,
-          backCardOffset: const Offset(0, 40),
-          padding: const EdgeInsets.all(24.0),
-          cardBuilder: (context, index, hOff, vOff) {
-            final user = _feedUsers[index];
-            final sparks = _currentUser != null
-                ? JuiceEngine.computeSparks(_currentUser!.juiceProfile, user.juiceProfile)
-                : 0.0;
-            return JuiceCard(
-              user: user,
-              sparksScore: sparks,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => UserProfileScreen(
-                    user: user,
-                    sparksScore: sparks,
+    return Column(
+      children: [
+        // Likes-remaining banner for free users running low
+        if (_likesRemaining != null && _likesRemaining! <= 10)
+          Container(
+            width: double.infinity,
+            color: _likesRemaining! <= 3
+                ? Colors.red[900]
+                : Colors.orange[900],
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                const Text('❤️', style: TextStyle(fontSize: 14)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '$_likesRemaining like${_likesRemaining == 1 ? '' : 's'} left today — tap to upgrade',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600),
                   ),
                 ),
-              ),
-            );
-          },
-          onSwipe: _onSwipe,
-          onEnd: () => setState(() => _feedUsers = []),
-        );
+                GestureDetector(
+                  onTap: () =>
+                      Navigator.pushNamed(context, '/premium-paywall'),
+                  child: const Text('Plus+',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          decoration: TextDecoration.underline)),
+                ),
+              ],
+            ),
+          ),
+        Expanded(
+          child: CardSwiper(
+            controller: _cardController,
+            cardsCount: _feedUsers.length,
+            allowedSwipeDirection: const AllowedSwipeDirection.all(),
+            numberOfCardsDisplayed:
+                _feedUsers.length >= 3 ? 3 : _feedUsers.length,
+            backCardOffset: const Offset(0, 40),
+            padding: const EdgeInsets.all(24.0),
+            cardBuilder: (context, index, hOff, vOff) {
+              final user = _feedUsers[index];
+              final sparks = _currentUser != null
+                  ? JuiceEngine.computeSparks(
+                      _currentUser!.juiceProfile, user.juiceProfile)
+                  : 0.0;
+              return JuiceCard(
+                user: user,
+                sparksScore: sparks,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => UserProfileScreen(
+                      user: user,
+                      sparksScore: sparks,
+                    ),
+                  ),
+                ),
+              );
+            },
+            onSwipe: _onSwipe,
+            onEnd: () => setState(() => _feedUsers = []),
+          ),
+        ),
+      ],
+    );
   }
 }
