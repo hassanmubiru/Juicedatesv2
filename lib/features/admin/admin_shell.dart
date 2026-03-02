@@ -68,6 +68,14 @@ class _AdminShellState extends State<AdminShell> {
           appBar: AppBar(
             title: _adminBadge(),
             actions: [
+              TextButton.icon(
+                onPressed: () =>
+                    Navigator.pushNamedAndRemoveUntil(
+                        context, '/home', (_) => false),
+                icon: const Icon(Icons.person_rounded, size: 18),
+                label: const Text('User App'),
+                style: TextButton.styleFrom(foregroundColor: Colors.white70),
+              ),
               IconButton(
                 icon: const Icon(Icons.refresh_rounded),
                 onPressed: () => setState(() {}),
@@ -108,6 +116,14 @@ class _AdminShellState extends State<AdminShell> {
         appBar: AppBar(
           title: _adminBadge(),
           actions: [
+            TextButton.icon(
+              onPressed: () =>
+                  Navigator.pushNamedAndRemoveUntil(
+                      context, '/home', (_) => false),
+              icon: const Icon(Icons.person_rounded, size: 18),
+              label: const Text('User App'),
+              style: TextButton.styleFrom(foregroundColor: Colors.white70),
+            ),
             IconButton(
               icon: const Icon(Icons.refresh_rounded),
               onPressed: () => setState(() {}),
