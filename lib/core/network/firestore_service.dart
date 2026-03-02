@@ -65,27 +65,25 @@ class FirestoreService {
     return JuiceUser.fromFirestore(doc);
   }
 
-  /// Returns up to 60 feed candidates, excluding:
-  ///  - the current user
-  ///  - users already liked/passed/blocked
-  ///  - banned users
-  ///  - users who blocked the current user
-  /// Limited to 60 docs per snapshot to avoid full-collection reads.
-  Stream<List<JuiceUser>> getFeedUsers(String uid, {int limit = 60}) {
+  /// Returns feed candidates sorted by Sparks compatibility (best match first).
+  /// Premium users: passed users are shown again + larger pool so they never run out.
+  Stream<List<JuiceUser>> getFeedUsers(String uid,
+      {int limit = 60, bool isPremium = false}) {
     return _db
         .collection('users')
-        .limit(limit)
+        .limit(isPremium ? 200 : limit)
         .snapshots()
         .asyncMap((snapshot) async {
       final currentUserDoc = await _db.collection('users').doc(uid).get();
       final currentUser = JuiceUser.fromFirestore(currentUserDoc);
       final excluded = <String>{
         ...currentUser.likedUids,
-        ...currentUser.passedUids,
+        // Premium users can re-see passed profiles — they never run out
+        if (!isPremium) ...currentUser.passedUids,
         ...currentUser.blockedUids,
         uid,
       };
-      return snapshot.docs
+      final users = snapshot.docs
           .map((doc) => JuiceUser.fromFirestore(doc))
           .where((u) =>
               !excluded.contains(u.uid) &&
@@ -93,26 +91,78 @@ class FirestoreService {
               u.isBanned != true &&
               !u.isAdmin)
           .toList();
+      // Sort best matches first using the Sparks algorithm
+      users.sort((a, b) {
+        final sA = JuiceEngine.computeSparks(
+            currentUser.juiceProfile, a.juiceProfile);
+        final sB = JuiceEngine.computeSparks(
+            currentUser.juiceProfile, b.juiceProfile);
+        return sB.compareTo(sA);
+      });
+      return users;
     });
   }
 
   // ── Likes / Passes ────────────────────────────────────────────────────────
 
+  static const int _freeDailyLikeLimit = 50;
+
+  /// Returns how many likes the user has left today, or null for premium (unlimited).
+  Future<int?> getDailyLikesLeft(String uid, bool isPremium) async {
+    if (isPremium) return null;
+    final doc = await _db.collection('users').doc(uid).get();
+    final todayStr = _todayString();
+    final storedDate = doc.data()?['dailyLikeDate'] as String? ?? '';
+    final storedCount =
+        (doc.data()?['dailyLikeCount'] as num?)?.toInt() ?? 0;
+    final count = storedDate == todayStr ? storedCount : 0;
+    return (_freeDailyLikeLimit - count).clamp(0, _freeDailyLikeLimit);
+  }
+
+  String _todayString() {
+    final t = DateTime.now();
+    return '${t.year}-${t.month.toString().padLeft(2,'0')}-${t.day.toString().padLeft(2,'0')}';
+  }
+
   /// Records a like atomically; creates a match if mutual (no duplicate matches).
+  /// Throws a [DailyLimitException] when a free user exhausts their daily quota.
   /// Returns the created [JuiceMatch] if mutual, or null.
   Future<JuiceMatch?> likeUser(JuiceUser fromUser, JuiceUser toUser) async {
     bool isMutual = false;
+    final todayStr = _todayString();
 
-    // Atomically record the like and check mutuality
+    // Atomically record the like, enforce daily limit, and check mutuality
     await _db.runTransaction((txn) async {
+      final fromDoc =
+          await txn.get(_db.collection('users').doc(fromUser.uid));
       final toDoc =
           await txn.get(_db.collection('users').doc(toUser.uid));
+
+      // ── Daily like limit (free users only) ──────────────────────────────
+      if (!fromUser.isPremium) {
+        final storedDate =
+            fromDoc.data()?['dailyLikeDate'] as String? ?? '';
+        final storedCount =
+            (fromDoc.data()?['dailyLikeCount'] as num?)?.toInt() ?? 0;
+        final todayCount = storedDate == todayStr ? storedCount : 0;
+        if (todayCount >= _freeDailyLikeLimit) {
+          throw DailyLimitException();
+        }
+        txn.update(_db.collection('users').doc(fromUser.uid), {
+          'likedUids': FieldValue.arrayUnion([toUser.uid]),
+          'dailyLikeDate': todayStr,
+          'dailyLikeCount':
+              storedDate == todayStr ? FieldValue.increment(1) : 1,
+        });
+      } else {
+        txn.update(_db.collection('users').doc(fromUser.uid), {
+          'likedUids': FieldValue.arrayUnion([toUser.uid]),
+        });
+      }
+
       final theirLikes =
           List<String>.from(toDoc.data()?['likedUids'] ?? []);
       isMutual = theirLikes.contains(fromUser.uid);
-      txn.update(_db.collection('users').doc(fromUser.uid), {
-        'likedUids': FieldValue.arrayUnion([toUser.uid]),
-      });
     });
 
     if (!isMutual) return null;
@@ -370,4 +420,11 @@ class FirestoreService {
     // Broadcast FCM to all users via server (fire-and-forget)
     _notify.notifyAnnouncement(title: title, body: body);
   }
+}
+
+/// Thrown when a free user has exhausted their daily like quota.
+class DailyLimitException implements Exception {
+  const DailyLimitException();
+  @override
+  String toString() => 'Daily like limit reached. Upgrade to Juice Plus+ for unlimited likes.';
 }
