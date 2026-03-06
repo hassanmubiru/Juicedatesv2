@@ -38,6 +38,7 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
   JuiceUser? _partnerUser;
   JuiceUser? _myUser;
   bool _showEmojiPanel = false;
+  int _emojiCategoryIndex = 0;
 
   // Emoji categories shown in the picker
   static const _emojiCategories = [
@@ -359,6 +360,7 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
   void dispose() {
     _controller.dispose();
     _scrollController.dispose();
+    _textFocusNode.dispose();
     super.dispose();
   }
 
@@ -528,41 +530,148 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
   }
 
   Widget _buildInput() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            icon: Icon(Icons.mic_rounded,
-                color: _currentTier >= 2
-                    ? Colors.orange
-                    : Colors.grey),
-            onPressed: () {},
+    return Column(
+      children: [
+        // ── Emoji panel ─────────────────────────────────────────────
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          child: _showEmojiPanel ? _buildEmojiPanel() : const SizedBox.shrink(),
+        ),
+        // ── Input row ───────────────────────────────────────────────
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
           ),
-          IconButton(
-            icon: const Icon(Icons.card_giftcard_rounded,
-                color: JuiceTheme.primaryTangerine),
-            onPressed: _showGiftPicker,
-            tooltip: 'Send a gift',
-          ),
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              decoration: const InputDecoration(
-                hintText: 'Type a message...',
-                border: InputBorder.none,
+          child: Row(
+            children: [
+              // Emoji toggle
+              IconButton(
+                icon: Icon(
+                  _showEmojiPanel
+                      ? Icons.keyboard_rounded
+                      : Icons.emoji_emotions_rounded,
+                  color: _showEmojiPanel
+                      ? JuiceTheme.primaryTangerine
+                      : Colors.grey[600],
+                ),
+                onPressed: () {
+                  if (!_showEmojiPanel) {
+                    FocusScope.of(context).unfocus();
+                  } else {
+                    _textFocusNode.requestFocus();
+                  }
+                  setState(() => _showEmojiPanel = !_showEmojiPanel);
+                },
               ),
-              onSubmitted: (_) => _sendMessage(),
+              // Mic
+              IconButton(
+                icon: Icon(Icons.mic_rounded,
+                    color: _currentTier >= 2 ? Colors.orange : Colors.grey),
+                onPressed: () {},
+              ),
+              // Gift
+              IconButton(
+                icon: const Icon(Icons.card_giftcard_rounded,
+                    color: JuiceTheme.primaryTangerine),
+                onPressed: _showGiftPicker,
+                tooltip: 'Send a gift',
+              ),
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  focusNode: _textFocusNode,
+                  decoration: const InputDecoration(
+                    hintText: 'Type a message...',
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(vertical: 8),
+                  ),
+                  onSubmitted: (_) => _sendMessage(),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.send_rounded,
+                    color: JuiceTheme.primaryTangerine),
+                onPressed: _sendMessage,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmojiPanel() {
+    final cats = _emojiCategories;
+    final emojis = cats[_emojiCategoryIndex].$2;
+    return Container(
+      height: 260,
+      color: Colors.white,
+      child: Column(
+        children: [
+          // Category tab strip
+          Container(
+            height: 44,
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              border: Border(
+                top: BorderSide(color: Colors.grey.shade200),
+                bottom: BorderSide(color: Colors.grey.shade200),
+              ),
+            ),
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              itemCount: cats.length,
+              itemBuilder: (_, i) {
+                final selected = i == _emojiCategoryIndex;
+                return GestureDetector(
+                  onTap: () => setState(() => _emojiCategoryIndex = i),
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: 4, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? JuiceTheme.primaryTangerine.withOpacity(0.15)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(20),
+                      border: selected
+                          ? Border.all(
+                              color: JuiceTheme.primaryTangerine, width: 1)
+                          : null,
+                    ),
+                    child: Center(
+                      child: Text(cats[i].$1,
+                          style: const TextStyle(fontSize: 20)),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.send_rounded,
-                color: JuiceTheme.primaryTangerine),
-            onPressed: _sendMessage,
+          // Emoji grid
+          Expanded(
+            child: GridView.builder(
+              padding: const EdgeInsets.all(8),
+              gridDelegate:
+                  const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 8,
+                mainAxisSpacing: 2,
+                crossAxisSpacing: 2,
+              ),
+              itemCount: emojis.length,
+              itemBuilder: (_, i) => GestureDetector(
+                onTap: () => _insertEmoji(emojis[i]),
+                child: Center(
+                  child:
+                      Text(emojis[i], style: const TextStyle(fontSize: 24)),
+                ),
+              ),
+            ),
           ),
         ],
       ),
