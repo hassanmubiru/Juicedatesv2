@@ -156,6 +156,10 @@ class JuiceMessage {
   final String? voiceUrl;
   final int tierUnlocked;
   final DateTime timestamp;
+  /// 'text' | 'gift'
+  final String type;
+  /// only set when type == 'gift'
+  final String? giftEmoji;
 
   JuiceMessage({
     required this.senderId,
@@ -163,6 +167,8 @@ class JuiceMessage {
     this.voiceUrl,
     required this.tierUnlocked,
     required this.timestamp,
+    this.type = 'text',
+    this.giftEmoji,
   });
 
   factory JuiceMessage.fromFirestore(Map<String, dynamic> data) {
@@ -173,6 +179,81 @@ class JuiceMessage {
       tierUnlocked: (data['tierUnlocked'] as num?)?.toInt() ?? 1,
       timestamp:
           (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      type: data['type'] ?? 'text',
+      giftEmoji: data['giftEmoji'],
+    );
+  }
+}
+
+// ── Moments (24-hour stories) ─────────────────────────────────────────────
+
+class JuiceMoment {
+  final String id;
+  final String uid;
+  final String displayName;
+  final String? authorPhotoUrl;
+  final String text;
+  final String? imageUrl;
+  final DateTime createdAt;
+  final DateTime expiresAt;
+
+  JuiceMoment({
+    required this.id,
+    required this.uid,
+    required this.displayName,
+    this.authorPhotoUrl,
+    required this.text,
+    this.imageUrl,
+    required this.createdAt,
+    required this.expiresAt,
+  });
+
+  factory JuiceMoment.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return JuiceMoment(
+      id: doc.id,
+      uid: data['uid'] ?? '',
+      displayName: data['displayName'] ?? '',
+      authorPhotoUrl: data['photoUrl'],
+      text: data['text'] ?? '',
+      imageUrl: data['imageUrl'],
+      createdAt:
+          (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      expiresAt: (data['expiresAt'] as Timestamp?)?.toDate() ??
+          DateTime.now().add(const Duration(hours: 24)),
+    );
+  }
+}
+
+// ── Winks ─────────────────────────────────────────────────────────────────
+
+class JuiceWink {
+  final String id;
+  final String fromUid;
+  final String fromName;
+  final String? fromPhoto;
+  final DateTime createdAt;
+  final bool seen;
+
+  JuiceWink({
+    required this.id,
+    required this.fromUid,
+    required this.fromName,
+    this.fromPhoto,
+    required this.createdAt,
+    required this.seen,
+  });
+
+  factory JuiceWink.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return JuiceWink(
+      id: doc.id,
+      fromUid: data['fromUid'] ?? '',
+      fromName: data['fromName'] ?? '',
+      fromPhoto: data['fromPhoto'],
+      createdAt:
+          (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      seen: data['seen'] ?? false,
     );
   }
 }

@@ -439,6 +439,8 @@ class FirestoreService {
       'voiceUrl': message.voiceUrl,
       'tierUnlocked': message.tierUnlocked,
       'timestamp': FieldValue.serverTimestamp(),
+      'type': message.type,
+      if (message.giftEmoji != null) 'giftEmoji': message.giftEmoji,
     });
     // Atomically bump messageCount and lastMessage in the same write
     batch.update(_db.collection('matches').doc(matchId), {
@@ -586,6 +588,99 @@ class FirestoreService {
     });
     // Broadcast FCM to all users via server (fire-and-forget)
     _notify.notifyAnnouncement(title: title, body: body);
+  }
+}
+
+  // ── Moments (24-hour stories) ────────────────────────────────────────────
+
+  Future<void> postMoment(
+    String uid,
+    String displayName,
+    String? photoUrl,
+    String text, {
+    String? imageUrl,
+  }) async {
+    final now = DateTime.now();
+    await _db.collection('moments').add({
+      'uid': uid,
+      'displayName': displayName,
+      'photoUrl': photoUrl,
+      'text': text,
+      if (imageUrl != null) 'imageUrl': imageUrl,
+      'createdAt': FieldValue.serverTimestamp(),
+      'expiresAt':
+          Timestamp.fromDate(now.add(const Duration(hours: 24))),
+    });
+  }
+
+  /// Stream of active (non-expired) moments, excluding blocked users.
+  Stream<List<JuiceMoment>> getActiveMoments(String currentUid) {
+    return _db
+        .collection('moments')
+        .where('expiresAt', isGreaterThan: Timestamp.now())
+        .orderBy('expiresAt', descending: false)
+        .limit(50)
+        .snapshots()
+        .asyncMap((snap) async {
+      try {
+        final currentDoc =
+            await _db.collection('users').doc(currentUid).get();
+        final blocked = List<String>.from(
+            currentDoc.data()?['blockedUids'] ?? []);
+        return snap.docs
+            .where((d) => !blocked.contains((d.data())['uid']))
+            .map((d) => JuiceMoment.fromFirestore(d))
+            .toList();
+      } catch (_) {
+        return snap.docs
+            .map((d) => JuiceMoment.fromFirestore(d))
+            .toList();
+      }
+    });
+  }
+
+  Future<void> deleteMoment(String momentId) async {
+    await _db.collection('moments').doc(momentId).delete();
+  }
+
+  // ── Winks ─────────────────────────────────────────────────────────
+
+  /// Sends a wink. Deduped per sender/receiver per day.
+  Future<void> winkUser(
+      String fromUid, String fromName, String? fromPhoto, String toUid) async {
+    if (fromUid == toUid) return;
+    final today = _todayString();
+    final existing = await _db
+        .collection('winks')
+        .where('fromUid', isEqualTo: fromUid)
+        .where('toUid', isEqualTo: toUid)
+        .where('date', isEqualTo: today)
+        .get();
+    if (existing.docs.isNotEmpty) return; // already winked today
+    await _db.collection('winks').add({
+      'fromUid': fromUid,
+      'toUid': toUid,
+      'fromName': fromName,
+      'fromPhoto': fromPhoto,
+      'date': today,
+      'createdAt': FieldValue.serverTimestamp(),
+      'seen': false,
+    });
+  }
+
+  Stream<List<JuiceWink>> getWinksReceived(String uid) {
+    return _db
+        .collection('winks')
+        .where('toUid', isEqualTo: uid)
+        .orderBy('createdAt', descending: true)
+        .limit(30)
+        .snapshots()
+        .map((snap) =>
+            snap.docs.map((d) => JuiceWink.fromFirestore(d)).toList());
+  }
+
+  Future<void> markWinkSeen(String winkId) async {
+    await _db.collection('winks').doc(winkId).update({'seen': true});
   }
 }
 
