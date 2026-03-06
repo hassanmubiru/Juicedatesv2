@@ -17,6 +17,7 @@ class JuiceUser {
   final List<String> likedUids;
   final List<String> passedUids;
   final List<String> blockedUids;
+  final List<String> superLikedUids;
   final String? bio;
   final List<String> interests;
   final String? fcmToken;
@@ -39,6 +40,7 @@ class JuiceUser {
     this.likedUids = const [],
     this.passedUids = const [],
     this.blockedUids = const [],
+    this.superLikedUids = const [],
     this.bio,
     this.interests = const [],
     this.fcmToken,
@@ -62,6 +64,7 @@ class JuiceUser {
         'likedUids': likedUids,
         'passedUids': passedUids,
         'blockedUids': blockedUids,
+        'superLikedUids': superLikedUids,
         'bio': bio,
         'interests': interests,
         'fcmToken': fcmToken,
@@ -87,6 +90,7 @@ class JuiceUser {
       likedUids: List<String>.from(data['likedUids'] ?? []),
       passedUids: List<String>.from(data['passedUids'] ?? []),
       blockedUids: List<String>.from(data['blockedUids'] ?? []),
+      superLikedUids: List<String>.from(data['superLikedUids'] ?? []),
       bio: data['bio'],
       interests: List<String>.from(data['interests'] ?? []),
       fcmToken: data['fcmToken'],
