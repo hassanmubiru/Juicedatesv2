@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import '../../core/network/firestore_service.dart';
+import '../../core/theme/juice_theme.dart';
 import '../../core/utils/juice_engine.dart';
 import '../../models/user_models.dart';
 import '../../widgets/juice_card.dart';
@@ -25,6 +26,8 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
   StreamSubscription<List<JuiceUser>>? _feedSub;
   // null = unlimited (premium), int = likes left today
   int? _likesRemaining;
+  // null = unlimited (premium), int = super likes left today
+  int? _superLikesRemaining;
 
   @override
   void initState() {
@@ -48,9 +51,10 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
 
     final isPremium = _currentUser?.isPremium ?? false;
 
-    // Load daily likes info for free users
+    // Load daily likes + super likes info
     final left = await _service.getDailyLikesLeft(uid, isPremium);
-    if (mounted) setState(() => _likesRemaining = left);
+    final superLeft = await _service.getSuperLikesLeft(uid, isPremium);
+    if (mounted) setState(() { _likesRemaining = left; _superLikesRemaining = superLeft; });
 
     _feedSub = _service.getFeedUsers(uid, isPremium: isPremium).listen(
       (users) {
@@ -84,6 +88,45 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
       await _service.passUser(uid, swipedUser.uid);
     }
     return true;
+  }
+
+  Future<void> _onSuperLike() async {
+    if (_feedUsers.isEmpty || _currentUser == null) return;
+    final swipedUser = _feedUsers[0];
+    try {
+      final match = await _service.superLikeUser(_currentUser!, swipedUser);
+      if (match != null && mounted) _showMatchDialog(swipedUser);
+      if (_superLikesRemaining != null && mounted) {
+        setState(() =>
+            _superLikesRemaining = (_superLikesRemaining! - 1).clamp(0, 99));
+      }
+      _cardController.swipe(CardSwiperDirection.top);
+    } on DailyLimitException {
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('⭐ Super Like limit'),
+          content: const Text(
+              'You\'ve used all 3 Super Likes for today.\n\nUpgrade to Juice Plus+ for unlimited Super Likes!'),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Later')),
+            ElevatedButton(
+              style:
+                  ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/premium-paywall');
+              },
+              child: const Text('Get Plus+',
+                  style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   void _showDailyLimitDialog() {
@@ -313,7 +356,115 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
             onEnd: () => setState(() => _feedUsers = []),
           ),
         ),
+        // ── Action buttons: Pass / Super Like / Like ───────────────────────
+        _buildActionButtons(),
       ],
+    );
+  }
+
+  // ── Pass / Super Like / Like buttons ──────────────────────────────────
+  Widget _buildActionButtons() {
+    final disabled = _feedUsers.isEmpty;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(28, 4, 28, 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Pass ✕
+          _FeedActionBtn(
+            heroTag: 'pass_btn',
+            icon: Icons.close_rounded,
+            color: Colors.red.shade400,
+            diameter: 58,
+            onTap: disabled
+                ? null
+                : () => _cardController.swipe(CardSwiperDirection.left),
+          ),
+          // Super Like ⭐ (smaller, with remaining count badge)
+          _FeedActionBtn(
+            heroTag: 'super_btn',
+            icon: Icons.star_rounded,
+            color: Colors.blue.shade400,
+            diameter: 48,
+            badge: _superLikesRemaining,
+            onTap: disabled ? null : _onSuperLike,
+          ),
+          // Like ❤
+          _FeedActionBtn(
+            heroTag: 'like_btn',
+            icon: Icons.favorite_rounded,
+            color: JuiceTheme.primaryTangerine,
+            diameter: 58,
+            onTap: disabled
+                ? null
+                : () => _cardController.swipe(CardSwiperDirection.right),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Action button widget ────────────────────────────────────────────────
+class _FeedActionBtn extends StatelessWidget {
+  final String heroTag;
+  final IconData icon;
+  final Color color;
+  final double diameter;
+  final int? badge; // null = unlimited, shows no badge
+  final VoidCallback? onTap;
+
+  const _FeedActionBtn({
+    required this.heroTag,
+    required this.icon,
+    required this.color,
+    required this.diameter,
+    this.badge,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final btn = FloatingActionButton(
+      heroTag: heroTag,
+      onPressed: onTap,
+      backgroundColor: Colors.white,
+      elevation: onTap == null ? 0 : 5,
+      child: Icon(
+        icon,
+        color: onTap == null ? Colors.grey[300] : color,
+        size: diameter * 0.5,
+      ),
+    );
+    if (badge == null) return SizedBox(width: diameter, height: diameter, child: btn);
+    return SizedBox(
+      width: diameter,
+      height: diameter,
+      child: Stack(
+        children: [
+          btn,
+          Positioned(
+            top: 0,
+            right: 0,
+            child: Container(
+              width: 18,
+              height: 18,
+              decoration: const BoxDecoration(
+                  color: Colors.orange, shape: BoxShape.circle),
+              child: Center(
+                child: Text(
+                  '$badge',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
