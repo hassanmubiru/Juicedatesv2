@@ -99,4 +99,57 @@ class JuiceEngine {
     // Clamp and scale to percentage (max possible = 85 points → 100%)
     return (totalScore / 85 * 100).clamp(0.0, 100.0);
   }
+
+  /// Generates 3 conversation-starter questions tailored to the two users'
+  /// strongest shared values from their JuiceProfiles.
+  static List<String> generateIcebreakers(JuiceProfile a, JuiceProfile b) {
+    final avgScores = {
+      'family': (a.family + b.family) / 2,
+      'career': (a.career + b.career) / 2,
+      'lifestyle': (a.lifestyle + b.lifestyle) / 2,
+      'ethics': (a.ethics + b.ethics) / 2,
+      'fun': (a.fun + b.fun) / 2,
+    };
+    final sorted = avgScores.entries.toList()
+      ..sort((x, y) => y.value.compareTo(x.value));
+
+    const questionMap = <String, List<String>>{
+      'family': [
+        'What does your ideal family Sunday look like?',
+        'Do you see yourself wanting kids someday?',
+        'Who in your family has influenced you the most?',
+      ],
+      'career': [
+        "If money weren't a factor, what would you do for work?",
+        'What drives you most in your professional life?',
+        "What's the biggest risk you've taken in your career?",
+      ],
+      'lifestyle': [
+        "Morning person or night owl — what's your perfect weekend look like?",
+        "What's a non-negotiable part of your daily routine?",
+        'Where in the world would you love to live and why?',
+      ],
+      'ethics': [
+        'What personal value would you never compromise on?',
+        'Is there a cause you care deeply about?',
+        'What do you think most people get wrong about the world?',
+      ],
+      'fun': [
+        "What's the most spontaneous thing you've ever done?",
+        "What skill would you love to master overnight?",
+        "What's your all-time favourite way to spend a free evening?",
+      ],
+    };
+
+    final results = <String>[];
+    for (final entry in sorted) {
+      final qs = questionMap[entry.key];
+      if (qs != null && qs.isNotEmpty) {
+        results.add(qs[results.length % qs.length]);
+      }
+      if (results.length == 3) break;
+    }
+    return results;
+  }
+  }
 }
