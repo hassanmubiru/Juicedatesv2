@@ -8,6 +8,7 @@ import '../../core/utils/juice_engine.dart';
 import '../../models/user_models.dart';
 import '../../widgets/juice_card.dart';
 import 'user_profile_screen.dart';
+import '../moments/moments_bar.dart';
 
 class JuiceFeedScreen extends StatefulWidget {
   const JuiceFeedScreen({super.key});
@@ -288,6 +289,8 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
     }
     return Column(
       children: [
+        // 24-hour Moments story bar (hookup4u-inspired)
+        const MomentsBar(),
         // Likes-remaining banner for free users running low
         if (_likesRemaining != null && _likesRemaining! <= 10)
           Container(

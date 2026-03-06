@@ -118,6 +118,59 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
     }
   }
 
+  void _sendGift(String emoji) {
+    _service.sendMessage(
+      widget.matchId,
+      JuiceMessage(
+        senderId: _myUid,
+        text: '$emoji gift',
+        tierUnlocked: _currentTier,
+        timestamp: DateTime.now(),
+        type: 'gift',
+        giftEmoji: emoji,
+      ),
+      recipientUid: widget.partnerUid,
+      senderName: _myName.isNotEmpty ? _myName : 'Your match',
+    );
+  }
+
+  void _showGiftPicker() {
+    const gifts = ['🌹', '💝', '🍊', '⭐', '🎉', '💐', '🍫', '🎵'];
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Send a Virtual Gift',
+                style:
+                    TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              children: gifts
+                  .map((g) => GestureDetector(
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _sendGift(g);
+                        },
+                        child: Text(g,
+                            style: const TextStyle(fontSize: 40)),
+                      ))
+                  .toList(),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _sendMessage() {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
@@ -130,6 +183,7 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
         text: text,
         tierUnlocked: _currentTier,
         timestamp: DateTime.now(),
+        type: 'text',
       ),
       recipientUid: widget.partnerUid,
       senderName: _myName.isNotEmpty ? _myName : 'Your match',
@@ -401,6 +455,12 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
                     ? Colors.orange
                     : Colors.grey),
             onPressed: () {},
+          ),
+          IconButton(
+            icon: const Icon(Icons.card_giftcard_rounded,
+                color: JuiceTheme.primaryTangerine),
+            onPressed: _showGiftPicker,
+            tooltip: 'Send a gift',
           ),
           Expanded(
             child: TextField(

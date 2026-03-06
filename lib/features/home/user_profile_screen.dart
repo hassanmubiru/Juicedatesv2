@@ -56,6 +56,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
     return Scaffold(
       backgroundColor: JuiceTheme.backgroundWhite,
+      bottomNavigationBar: _WinkBar(targetUser: user),
       body: CustomScrollView(
         slivers: [
           // ── Photo gallery ──────────────────────────────────────────
@@ -463,6 +464,74 @@ class _JuiceProfileBreakdown extends StatelessWidget {
                 child: _TraitRow(label: t.$1, ratio: t.$2),
               ))
           .toList(),
+    );
+  }
+}
+
+class _WinkBar extends StatefulWidget {
+  final JuiceUser targetUser;
+  const _WinkBar({required this.targetUser});
+
+  @override
+  State<_WinkBar> createState() => _WinkBarState();
+}
+
+class _WinkBarState extends State<_WinkBar> {
+  bool _winkSent = false;
+  final _service = FirestoreService();
+
+  Future<void> _sendWink() async {
+    final myUid = FirebaseAuth.instance.currentUser?.uid;
+    if (myUid == null) return;
+    final myUser = await _service.getUserOnce(myUid);
+    if (myUser == null || !mounted) return;
+    await _service.winkUser(
+      myUid,
+      myUser.displayName,
+      myUser.photoUrl,
+      widget.targetUser.uid,
+    );
+    if (!mounted) return;
+    setState(() => _winkSent = true);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Wink sent to ${widget.targetUser.displayName}! 👋'),
+        backgroundColor: JuiceTheme.primaryTangerine,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+        child: SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            icon: const Text('👋', style: TextStyle(fontSize: 18)),
+            label: Text(
+              _winkSent ? 'Wink Sent!' : 'Send a Wink',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: _winkSent
+                      ? Colors.grey
+                      : JuiceTheme.primaryTangerine),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(
+                  color: _winkSent
+                      ? Colors.grey
+                      : JuiceTheme.primaryTangerine,
+                  width: 1.5),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28)),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+            onPressed: _winkSent ? null : _sendWink,
+          ),
+        ),
+      ),
     );
   }
 }

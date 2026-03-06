@@ -6,6 +6,7 @@ import '../../models/user_models.dart';
 import '../chat/single_chat_screen.dart';
 import '../home/user_profile_screen.dart';
 import '../likes/likes_received_tab.dart';
+import 'winks_tab.dart';
 
 class MatchesListScreen extends StatefulWidget {
   const MatchesListScreen({super.key});
@@ -21,7 +22,7 @@ class _MatchesListScreenState extends State<MatchesListScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -46,6 +47,7 @@ class _MatchesListScreenState extends State<MatchesListScreen>
           tabs: const [
             Tab(icon: Icon(Icons.favorite_rounded), text: 'Matches'),
             Tab(icon: Icon(Icons.star_rounded), text: 'Liked Me'),
+            Tab(icon: Icon(Icons.waving_hand_rounded), text: 'Winks'),
           ],
         ),
       ),
@@ -54,6 +56,7 @@ class _MatchesListScreenState extends State<MatchesListScreen>
         children: [
           _MatchesTab(uid: uid, service: service),
           const LikesReceivedTab(),
+          const WinksTab(),
         ],
       ),
     );
