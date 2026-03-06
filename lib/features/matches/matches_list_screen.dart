@@ -7,8 +7,28 @@ import '../chat/single_chat_screen.dart';
 import '../home/user_profile_screen.dart';
 import '../likes/likes_received_tab.dart';
 
-class MatchesListScreen extends StatelessWidget {
+class MatchesListScreen extends StatefulWidget {
   const MatchesListScreen({super.key});
+
+  @override
+  State<MatchesListScreen> createState() => _MatchesListScreenState();
+}
+
+class _MatchesListScreenState extends State<MatchesListScreen>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,8 +36,29 @@ class MatchesListScreen extends StatelessWidget {
     final service = FirestoreService();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Matches')),
-      body: StreamBuilder<List<JuiceMatch>>(
+      appBar: AppBar(
+        title: const Text('Matches'),
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: JuiceTheme.primaryTangerine,
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: JuiceTheme.primaryTangerine,
+          tabs: const [
+            Tab(icon: Icon(Icons.favorite_rounded), text: 'Matches'),
+            Tab(icon: Icon(Icons.star_rounded), text: 'Liked Me'),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _MatchesTab(uid: uid, service: service),
+          const LikesReceivedTab(),
+        ],
+      ),
+    );
+  }
+}
         stream: service.getMatches(uid),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
