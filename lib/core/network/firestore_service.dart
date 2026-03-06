@@ -189,6 +189,173 @@ class FirestoreService {
     });
   }
 
+  // ── Super Like ────────────────────────────────────────────────────────────
+
+  static const int _freeDailySuperLikeLimit = 3;
+
+  /// Returns super likes left today, or null for premium (unlimited).
+  Future<int?> getSuperLikesLeft(String uid, bool isPremium) async {
+    if (isPremium) return null;
+    final doc = await _db.collection('users').doc(uid).get();
+    final todayStr = _todayString();
+    final storedDate = doc.data()?['dailySuperLikeDate'] as String? ?? '';
+    final storedCount =
+        (doc.data()?['dailySuperLikeCount'] as num?)?.toInt() ?? 0;
+    final count = storedDate == todayStr ? storedCount : 0;
+    return (_freeDailySuperLikeLimit - count)
+        .clamp(0, _freeDailySuperLikeLimit);
+  }
+
+  /// Records a super like. Counts as a regular like too.
+  /// Creates a match if the target already liked/superliked back.
+  /// Throws [DailyLimitException] when free user exhausts 3/day quota.
+  Future<JuiceMatch?> superLikeUser(
+      JuiceUser fromUser, JuiceUser toUser) async {
+    bool isMutual = false;
+    final todayStr = _todayString();
+
+    await _db.runTransaction((txn) async {
+      final fromDoc =
+          await txn.get(_db.collection('users').doc(fromUser.uid));
+      final toDoc =
+          await txn.get(_db.collection('users').doc(toUser.uid));
+
+      if (!fromUser.isPremium) {
+        final storedDate =
+            fromDoc.data()?['dailySuperLikeDate'] as String? ?? '';
+        final storedCount =
+            (fromDoc.data()?['dailySuperLikeCount'] as num?)?.toInt() ?? 0;
+        final todayCount = storedDate == todayStr ? storedCount : 0;
+        if (todayCount >= _freeDailySuperLikeLimit) {
+          throw DailyLimitException();
+        }
+        txn.update(_db.collection('users').doc(fromUser.uid), {
+          'superLikedUids': FieldValue.arrayUnion([toUser.uid]),
+          'likedUids': FieldValue.arrayUnion([toUser.uid]),
+          'dailySuperLikeDate': todayStr,
+          'dailySuperLikeCount':
+              storedDate == todayStr ? FieldValue.increment(1) : 1,
+        });
+      } else {
+        txn.update(_db.collection('users').doc(fromUser.uid), {
+          'superLikedUids': FieldValue.arrayUnion([toUser.uid]),
+          'likedUids': FieldValue.arrayUnion([toUser.uid]),
+        });
+      }
+
+      final theirLikes =
+          List<String>.from(toDoc.data()?['likedUids'] ?? []);
+      final theirSuperLikes =
+          List<String>.from(toDoc.data()?['superLikedUids'] ?? []);
+      isMutual = theirLikes.contains(fromUser.uid) ||
+          theirSuperLikes.contains(fromUser.uid);
+    });
+
+    if (!isMutual) return null;
+
+    final existing = await _db
+        .collection('matches')
+        .where('users', arrayContains: fromUser.uid)
+        .get();
+    final alreadyMatched = existing.docs.any((d) {
+      final users = List<String>.from(d.data()['users'] ?? []);
+      return users.contains(toUser.uid);
+    });
+    if (alreadyMatched) return null;
+
+    final sparks =
+        JuiceEngine.computeSparks(fromUser.juiceProfile, toUser.juiceProfile);
+    return await _createMatch(fromUser, toUser, sparks);
+  }
+
+  // ── Who Liked Me ──────────────────────────────────────────────────────────
+
+  /// Returns a stream of users who liked the current user and aren't yet matched.
+  Stream<List<JuiceUser>> getUsersWhoLikedMe(String uid) {
+    return _db
+        .collection('users')
+        .where('likedUids', arrayContains: uid)
+        .snapshots()
+        .asyncMap((snapshot) async {
+      final matchSnap = await _db
+          .collection('matches')
+          .where('users', arrayContains: uid)
+          .get();
+      final matchedUids = <String>{};
+      for (final doc in matchSnap.docs) {
+        final users = List<String>.from(doc.data()['users'] ?? []);
+        matchedUids.addAll(users.where((u) => u != uid));
+      }
+      final myDoc = await _db.collection('users').doc(uid).get();
+      final blockedUids = Set<String>.from(
+          List<String>.from(myDoc.data()?['blockedUids'] ?? []));
+      return snapshot.docs
+          .map((doc) => JuiceUser.fromFirestore(doc))
+          .where((u) =>
+              !matchedUids.contains(u.uid) &&
+              !blockedUids.contains(u.uid) &&
+              u.uid != uid &&
+              !u.isBanned)
+          .toList();
+    });
+  }
+
+  // ── Profile Views ─────────────────────────────────────────────────────────
+
+  /// Records that [viewerUid] viewed [profileUid]'s profile.
+  Future<void> recordProfileView(String viewerUid, String profileUid) async {
+    if (viewerUid == profileUid) return;
+    await _db
+        .collection('users')
+        .doc(profileUid)
+        .collection('profileViews')
+        .doc(viewerUid)
+        .set({'viewedAt': FieldValue.serverTimestamp()},
+            SetOptions(merge: true));
+  }
+
+  /// Returns how many distinct people viewed [uid]'s profile in the last 7 days.
+  Future<int> getProfileViewCount(String uid) async {
+    try {
+      final cutoff = Timestamp.fromDate(
+          DateTime.now().subtract(const Duration(days: 7)));
+      final snap = await _db
+          .collection('users')
+          .doc(uid)
+          .collection('profileViews')
+          .where('viewedAt', isGreaterThan: cutoff)
+          .get();
+      return snap.docs.length;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  /// For premium users: returns the profiles of recent viewers (last 7 days, max 20).
+  Future<List<JuiceUser>> getProfileViewers(String uid) async {
+    try {
+      final cutoff = Timestamp.fromDate(
+          DateTime.now().subtract(const Duration(days: 7)));
+      final snap = await _db
+          .collection('users')
+          .doc(uid)
+          .collection('profileViews')
+          .where('viewedAt', isGreaterThan: cutoff)
+          .orderBy('viewedAt', descending: true)
+          .limit(20)
+          .get();
+      if (snap.docs.isEmpty) return [];
+      final userDocs = await Future.wait(
+          snap.docs.map((d) => _db.collection('users').doc(d.id).get()));
+      return userDocs
+          .where((d) => d.exists)
+          .map((d) => JuiceUser.fromFirestore(d))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
   // ── Matches ───────────────────────────────────────────────────────────────
 
   Future<JuiceMatch> _createMatch(
