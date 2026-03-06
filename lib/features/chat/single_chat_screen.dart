@@ -27,6 +27,7 @@ class SingleChatScreen extends StatefulWidget {
 class _SingleChatScreenState extends State<SingleChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final FocusNode _textFocusNode = FocusNode();
   final _service = FirestoreService();
   late final String _myUid;
   String _myName = '';
@@ -36,12 +37,63 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
   String? _partnerPhotoUrl;
   JuiceUser? _partnerUser;
   JuiceUser? _myUser;
+  bool _showEmojiPanel = false;
+
+  // Emoji categories shown in the picker
+  static const _emojiCategories = [
+    (
+      '😊',
+      [
+        '😀', '😂', '🤣', '😊', '😍', '🥰', '😘', '😜', '😎', '🤩',
+        '😢', '😭', '😡', '🥺', '🤔', '😴', '🤗', '😏', '🙄', '😬',
+        '🥳', '🤭', '😇', '🫠', '😤', '🤤', '🥵', '🤯', '😱', '🫣',
+      ]
+    ),
+    (
+      '❤️',
+      [
+        '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '💖', '💗',
+        '💓', '💞', '💕', '💟', '❣️', '💔', '🔥', '✨', '💫', '⭐',
+        '🌟', '💯', '🎉', '🎊', '🥂', '🍾', '🎁', '🌹', '💐', '🌺',
+      ]
+    ),
+    (
+      '👋',
+      [
+        '👋', '🤝', '👍', '👎', '👏', '🙌', '🤜', '🤛', '✌️', '🤞',
+        '🤟', '🤙', '👈', '👉', '👆', '👇', '☝️', '💪', '🦾', '🙏',
+        '💅', '🤳', '✍️', '🫶', '🫂', '🫰', '🤌', '👀', '👅', '💋',
+      ]
+    ),
+    (
+      '🍕',
+      [
+        '🍕', '🍔', '🌮', '🍜', '🍣', '🍩', '🍫', '🍦', '🥤', '🍺',
+        '🍷', '🥗', '🍉', '🍓', '🍑', '🍒', '🍋', '🍊', '🥭', '🍍',
+        '🌽', '🍁', '🌸', '🌴', '🦋', '🐶', '🐱', '🦊', '🐼', '🦁',
+      ]
+    ),
+    (
+      '🚗',
+      [
+        '🚗', '✈️', '🚀', '⛵', '🏖️', '🏔️', '🌍', '🗺️', '🎡', '🎢',
+        '🎠', '🏋️', '⚽', '🏀', '🎾', '🏄', '🎯', '🎮', '🎲', '🃏',
+        '🎭', '🎵', '🎸', '🎤', '📸', '💻', '📱', '⌚', '🔑', '💎',
+      ]
+    ),
+  ];
 
   @override
   void initState() {
     super.initState();
     _myUid = FirebaseAuth.instance.currentUser?.uid ?? '';
     _loadMatchState();
+    // When the keyboard appears, close the emoji panel
+    _textFocusNode.addListener(() {
+      if (_textFocusNode.hasFocus && _showEmojiPanel) {
+        setState(() => _showEmojiPanel = false);
+      }
+    });
   }
 
   /// Load persisted tier + message count so chat state survives reopens.
@@ -116,6 +168,18 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
         }
       }
     }
+  }
+
+  void _insertEmoji(String emoji) {
+    final sel = _controller.selection;
+    final text = _controller.text;
+    final cursor = sel.isValid ? sel.baseOffset : text.length;
+    final newText =
+        text.substring(0, cursor) + emoji + text.substring(cursor);
+    _controller.value = _controller.value.copyWith(
+      text: newText,
+      selection: TextSelection.collapsed(offset: cursor + emoji.length),
+    );
   }
 
   void _sendGift(String emoji) {
