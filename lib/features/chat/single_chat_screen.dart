@@ -394,6 +394,29 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
                   itemBuilder: (context, index) {
                     final msg = messages[index];
                     final isMe = msg.senderId == _myUid;
+                    // Gift message — large centered emoji bubble
+                    if (msg.type == 'gift' && msg.giftEmoji != null) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Column(
+                          crossAxisAlignment: isMe
+                              ? CrossAxisAlignment.end
+                              : CrossAxisAlignment.start,
+                          children: [
+                            Text(msg.giftEmoji!,
+                                style: const TextStyle(fontSize: 52)),
+                            const SizedBox(height: 2),
+                            Text(
+                              isMe
+                                  ? 'You sent a gift 🎁'
+                                  : '${widget.name} sent you a gift 🎁',
+                              style: const TextStyle(
+                                  fontSize: 11, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
                     return Align(
                       alignment: isMe
                           ? Alignment.centerRight
