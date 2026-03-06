@@ -59,6 +59,16 @@ class _MatchesListScreenState extends State<MatchesListScreen>
     );
   }
 }
+
+// ── Matches tab content ───────────────────────────────────────────────────
+class _MatchesTab extends StatelessWidget {
+  final String uid;
+  final FirestoreService service;
+  const _MatchesTab({required this.uid, required this.service});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<JuiceMatch>>(
         stream: service.getMatches(uid),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
