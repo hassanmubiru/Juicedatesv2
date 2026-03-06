@@ -20,6 +20,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isPremium = false;
   bool _invisibleMode = true;
   bool _newSparks = true;
+  int _profileViewCount = 0;
 
   @override
   void initState() {
@@ -49,6 +50,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _isPremium = user.isPremium;
       });
     }
+    // Load profile view count (non-blocking)
+    final viewCount = await FirestoreService().getProfileViewCount(uid);
+    if (mounted) setState(() => _profileViewCount = viewCount);
   }
 
   Future<void> _toggleDark(bool val) async {
@@ -120,6 +124,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: const Text('Get a verified badge'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showComingSoon('Juice Verification'),
+          ),
+          // Profile views
+          ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.visibility_rounded,
+                  color: Colors.blue, size: 20),
+            ),
+            title: const Text('Profile Views'),
+            subtitle: Text(
+              _profileViewCount == 0
+                  ? 'No views yet this week'
+                  : '$_profileViewCount ${_profileViewCount == 1 ? 'person' : 'people'} viewed your profile this week',
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showComingSoon('Detailed Viewers'),
           ),
           const _SectionHeader(title: 'Premium'),
           ListTile(

@@ -149,6 +149,94 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
     });
   }
 
+  /// Builds icebreaker question chips when a chat has no messages yet.
+  Widget _buildIcebreakers() {
+    List<String> questions;
+    if (_myUser != null && _partnerUser != null) {
+      questions = JuiceEngine.generateIcebreakers(
+          _myUser!.juiceProfile, _partnerUser!.juiceProfile);
+    } else {
+      questions = [
+        "What does your ideal weekend look like?",
+        "What's something you're passionate about right now?",
+        "If you could live anywhere, where would it be?",
+      ];
+    }
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: JuiceTheme.primaryGradient,
+                shape: BoxShape.circle,
+              ),
+              child: const Text('\u2728', style: TextStyle(fontSize: 32)),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              "It's a Juice Match! \ud83c\udf89",
+              style: const TextStyle(
+                  fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Break the ice with ${widget.name}',
+              style: const TextStyle(color: Colors.grey, fontSize: 14),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Try asking:',
+              style: TextStyle(
+                  fontWeight: FontWeight.w600, color: Colors.black54),
+            ),
+            const SizedBox(height: 12),
+            ...questions.map(
+              (q) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: GestureDetector(
+                  onTap: () => _controller.text = q,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: JuiceTheme.primaryTangerine.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                          color: JuiceTheme.primaryTangerine.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text('\ud83d\udca1',
+                            style: TextStyle(fontSize: 16)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            q,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                        const Icon(Icons.arrow_forward_ios_rounded,
+                            size: 12, color: Colors.grey),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _controller.dispose();

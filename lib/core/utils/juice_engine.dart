@@ -151,5 +151,4 @@ class JuiceEngine {
     }
     return results;
   }
-  }
 }
