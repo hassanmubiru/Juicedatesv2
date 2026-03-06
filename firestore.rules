@@ -98,4 +98,24 @@ service cloud.firestore {
       allow write: if isSignedIn() && request.auth.uid == viewerId;
     }
   }
+
+  // ── Moments (24h stories) ──────────────────────────────────────────────
+  match /databases/{database}/documents/moments/{momentId} {
+    allow read: if isSignedIn();
+    allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+    allow delete: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+    allow update: if false;
+  }
+
+  // ── Winks ──────────────────────────────────────────────────────────────
+  match /databases/{database}/documents/winks/{winkId} {
+    allow read: if isSignedIn() && (
+      resource.data.fromUid == request.auth.uid ||
+      resource.data.toUid == request.auth.uid
+    );
+    allow create: if isSignedIn() && request.resource.data.fromUid == request.auth.uid;
+    allow update: if isSignedIn() && resource.data.toUid == request.auth.uid
+      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seen']);
+    allow delete: if isAdmin();
+  }
 }
