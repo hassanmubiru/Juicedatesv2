@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../core/network/firestore_service.dart';
 import '../../core/theme/juice_theme.dart';
 import '../../core/utils/juice_engine.dart';
 import '../../models/user_models.dart';
@@ -28,6 +30,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       photos.add(widget.user.photoUrl!);
     }
     return photos;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Record that current user viewed this profile
+    final myUid = FirebaseAuth.instance.currentUser?.uid;
+    if (myUid != null) {
+      FirestoreService().recordProfileView(myUid, widget.user.uid);
+    }
   }
 
   @override

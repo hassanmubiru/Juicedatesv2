@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/network/firestore_service.dart';
 import '../../core/theme/juice_theme.dart';
 import '../../models/user_models.dart';
-import '../../widgets/tier_meter.dart';
+import '../../core/utils/juice_engine.dart';
 import '../calling/video_call_screen.dart';
 import '../calling/audio_call_screen.dart';
 
@@ -33,6 +33,8 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
   double _progression = 0.0;
   int _messageCount = 0;
   String? _partnerPhotoUrl;
+  JuiceUser? _partnerUser;
+  JuiceUser? _myUser;
 
   @override
   void initState() {
@@ -52,6 +54,12 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
         _partnerPhotoUrl = match.getPartnerPhoto(_myUid);
         _myName = match.userNames[_myUid] ?? '';
       });
+    }
+    // Load user profiles for icebreaker generation
+    if (widget.partnerUid != null) {
+      final partner = await _service.getUserOnce(widget.partnerUid!);
+      final me = await _service.getUserOnce(_myUid);
+      if (mounted) setState(() { _partnerUser = partner; _myUser = me; });
     }
   }
 
@@ -231,6 +239,10 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
                 }
                 final messages = snapshot.data ?? [];
                 if (messages.isNotEmpty) _scrollToBottom();
+
+                if (messages.isEmpty) {
+                  return _buildIcebreakers();
+                }
 
                 return ListView.builder(
                   controller: _scrollController,
