@@ -6,6 +6,7 @@ import '../../models/user_models.dart';
 import '../../core/utils/juice_engine.dart';
 import '../calling/video_call_screen.dart';
 import '../calling/audio_call_screen.dart';
+import '../../widgets/tier_meter.dart';
 
 class SingleChatScreen extends StatefulWidget {
   final String name;
@@ -55,7 +56,7 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
         _myName = match.userNames[_myUid] ?? '';
       });
     }
-    // Load user profiles for icebreaker generation
+    // Load user profiles for icebreaker suggestion generation
     if (widget.partnerUid != null) {
       final partner = await _service.getUserOnce(widget.partnerUid!);
       final me = await _service.getUserOnce(_myUid);
