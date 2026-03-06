@@ -72,8 +72,7 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Website reviews: anyone (including unauthenticated) can read and create;
-    // content is limited to review fields only
+    // Website reviews
     match /website_reviews/{reviewId} {
       allow read: if true;
       allow create: if request.resource.data.keys().hasOnly(['name','rating','text','tags','timestamp'])
@@ -86,7 +85,7 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // Public stats (download counter) — anyone can read; only count field can be written
+    // Public stats
     match /stats/{statId} {
       allow read: if true;
       allow write: if request.resource.data.keys().hasOnly(['count']);
@@ -97,25 +96,30 @@ service cloud.firestore {
       allow read: if isOwner(userId) || isAdmin();
       allow write: if isSignedIn() && request.auth.uid == viewerId;
     }
-  }
 
-  // ── Moments (24h stories) ──────────────────────────────────────────────
-  match /databases/{database}/documents/moments/{momentId} {
-    allow read: if isSignedIn();
-    allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
-    allow delete: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
-    allow update: if false;
-  }
+    // Moments (24h stories)
+    match /moments/{momentId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow delete: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow update: if false;
+    }
 
-  // ── Winks ──────────────────────────────────────────────────────────────
-  match /databases/{database}/documents/winks/{winkId} {
-    allow read: if isSignedIn() && (
-      resource.data.fromUid == request.auth.uid ||
-      resource.data.toUid == request.auth.uid
-    );
-    allow create: if isSignedIn() && request.resource.data.fromUid == request.auth.uid;
-    allow update: if isSignedIn() && resource.data.toUid == request.auth.uid
-      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seen']);
-    allow delete: if isAdmin();
+    // Winks — admin can list all; participants can read their own
+    match /winks/{winkId} {
+      allow read: if isAdmin() || (isSignedIn() && (
+        resource.data.fromUid == request.auth.uid ||
+        resource.data.toUid == request.auth.uid
+      ));
+      allow create: if isSignedIn() && request.resource.data.fromUid == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.toUid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seen']);
+      allow delete: if isAdmin();
+    }
+
+    // Admin broadcast notifications
+    match /adminNotifications/{id} {
+      allow read, write: if isAdmin();
+    }
   }
 }
