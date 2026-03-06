@@ -193,7 +193,6 @@ class _MatchesTab extends StatelessWidget {
             },
           );
         },
-      ),
     );
   }
 
