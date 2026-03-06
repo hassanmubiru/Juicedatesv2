@@ -589,7 +589,6 @@ class FirestoreService {
     // Broadcast FCM to all users via server (fire-and-forget)
     _notify.notifyAnnouncement(title: title, body: body);
   }
-}
 
   // ── Moments (24-hour stories) ────────────────────────────────────────────
 
