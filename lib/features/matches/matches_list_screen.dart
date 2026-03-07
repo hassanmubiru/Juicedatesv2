@@ -18,11 +18,15 @@ class MatchesListScreen extends StatefulWidget {
 class _MatchesListScreenState extends State<MatchesListScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+  late final String _uid;
+  late final FirestoreService _service;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    _service = FirestoreService();
   }
 
   @override
@@ -33,9 +37,6 @@ class _MatchesListScreenState extends State<MatchesListScreen>
 
   @override
   Widget build(BuildContext context) {
-    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
-    final service = FirestoreService();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Matches'),
@@ -54,7 +55,7 @@ class _MatchesListScreenState extends State<MatchesListScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _MatchesTab(uid: uid, service: service),
+          _MatchesTab(uid: _uid, service: _service),
           const LikesReceivedTab(),
           const WinksTab(),
         ],

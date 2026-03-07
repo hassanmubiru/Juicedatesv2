@@ -266,7 +266,7 @@ class _LikesReceivedTabState extends State<LikesReceivedTab> {
                                 textColor: Colors.white,
                                 onTap: () async {
                                   await _service.passUser(_uid!, liker.uid);
-                                  if (mounted) {
+                                  if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                           content: Text(
@@ -289,7 +289,7 @@ class _LikesReceivedTabState extends State<LikesReceivedTab> {
                                   try {
                                     final match = await _service
                                         .likeUser(myUser, liker);
-                                    if (!mounted) return;
+                                    if (!context.mounted) return;
                                     if (match != null) {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
@@ -298,7 +298,7 @@ class _LikesReceivedTabState extends State<LikesReceivedTab> {
                                       );
                                     }
                                   } on DailyLimitException {
-                                    if (mounted) {
+                                    if (context.mounted) {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         const SnackBar(
                                             content: Text(

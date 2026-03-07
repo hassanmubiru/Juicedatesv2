@@ -636,7 +636,7 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
                       color: selected
-                          ? JuiceTheme.primaryTangerine.withOpacity(0.15)
+                          ? JuiceTheme.primaryTangerine.withValues(alpha: 0.15)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(20),
                       border: selected
