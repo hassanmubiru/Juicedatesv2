@@ -16,7 +16,6 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isDark = false;
-  bool _isAdmin = false;
   bool _isPremium = false;
   bool _invisibleMode = true;
   bool _newSparks = true;
@@ -27,7 +26,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     _isDark = themeModeNotifier.value == ThemeMode.dark;
     _loadPrefs();
-    _loadAdminStatus();
+    _loadUserStatus();
   }
 
   Future<void> _loadPrefs() async {
@@ -40,13 +39,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _loadAdminStatus() async {
+  Future<void> _loadUserStatus() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
     final user = await FirestoreService().getUserOnce(uid);
     if (mounted && user != null) {
       setState(() {
-        _isAdmin = user.isAdmin;
         _isPremium = user.isPremium;
       });
     }
@@ -212,26 +210,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             subtitle: const Text('Notify me when I get a new match'),
             secondary: const Icon(Icons.flash_on_rounded),
           ),
-          const SizedBox(height: 12),
-          if (_isAdmin) ...[
-            const _SectionHeader(title: 'Admin'),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  gradient: JuiceTheme.primaryGradient,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.admin_panel_settings_rounded,
-                    color: Colors.white, size: 20),
-              ),
-              title: const Text('Admin Panel',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: const Text('Manage users, reports & events'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.pushNamed(context, '/admin'),
-            ),
-          ],
           const SizedBox(height: 48),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),

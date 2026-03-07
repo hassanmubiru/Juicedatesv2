@@ -21,7 +21,6 @@ import 'features/premium/settings_screen.dart';
 import 'features/premium/edit_profile_screen.dart';
 import 'features/calling/video_call_screen.dart';
 import 'features/calling/audio_call_screen.dart';
-import 'features/admin/admin_shell.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -81,19 +80,6 @@ class _JuiceDatesAppState extends State<JuiceDatesApp> {
     super.initState();
     _setupForegroundMessages();
     _setupNotificationTap();
-    _subscribeAdminTopicIfNeeded();
-  }
-
-  /// Subscribe to the "admins" FCM topic if the current user is an admin,
-  /// so they receive ban notifications from Cloud Functions.
-  void _subscribeAdminTopicIfNeeded() {
-    FirebaseAuth.instance.authStateChanges().listen((user) async {
-      if (user == null) return;
-      final juiceUser = await FirestoreService().getUserOnce(user.uid);
-      if (juiceUser?.isAdmin == true) {
-        await FirebaseMessaging.instance.subscribeToTopic('admins');
-      }
-    });
   }
 
   /// Show an in-app banner when a push arrives while the app is open.
@@ -154,10 +140,6 @@ class _JuiceDatesAppState extends State<JuiceDatesApp> {
         // if a matchId is provided.
         nav.pushNamed('/home');
         break;
-      case 'ban':
-        // Admins: open admin panel
-        nav.pushNamed('/admin');
-        break;
     }
   }
 
@@ -188,7 +170,6 @@ class _JuiceDatesAppState extends State<JuiceDatesApp> {
             '/premium-paywall': (context) => const PremiumPaywallScreen(),
             '/video-call': (context) => const VideoCallScreen(),
             '/audio-call': (context) => const AudioCallScreen(),
-            '/admin': (context) => const AdminShell(),
           },
         ),
       ),
