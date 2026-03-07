@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/user_models.dart';
 import '../utils/juice_engine.dart';
 import 'cloudinary_service.dart';
@@ -487,6 +486,13 @@ class FirestoreService {
   }
 
   // ── Moments (24-hour stories) ────────────────────────────────────────────
+
+  Future<void> requestPremium(String uid) async {
+    await _db
+        .collection('users')
+        .doc(uid)
+        .update({'premiumRequested': true});
+  }
 
   Future<void> postMoment(
     String uid,
