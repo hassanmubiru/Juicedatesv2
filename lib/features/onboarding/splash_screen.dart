@@ -40,9 +40,6 @@ class _SplashScreenState extends State<SplashScreen> {
       // Route to quiz/profile-setup if onboarding not completed
       if (user == null || user.juiceSummary.isEmpty) {
         Navigator.pushReplacementNamed(context, '/quiz');
-      } else if (user.isAdmin) {
-        // Admins land directly in the Admin Panel
-        Navigator.pushReplacementNamed(context, '/admin');
       } else {
         Navigator.pushReplacementNamed(context, '/home');
       }

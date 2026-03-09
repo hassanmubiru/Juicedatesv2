@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/network/firestore_service.dart';
 import '../../core/theme/juice_theme.dart';
@@ -370,10 +371,16 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            const CircleAvatar(
+            CircleAvatar(
               radius: 18,
-              backgroundColor: JuiceTheme.primaryTangerine,
-              child: Icon(Icons.person, color: Colors.white, size: 20),
+              backgroundColor: Colors.grey[300],
+              backgroundImage: (_partnerPhotoUrl != null &&
+                      _partnerPhotoUrl!.isNotEmpty)
+                  ? CachedNetworkImageProvider(_partnerPhotoUrl!)
+                  : null,
+              child: (_partnerPhotoUrl == null || _partnerPhotoUrl!.isEmpty)
+                  ? Icon(Icons.person, color: Colors.grey[500], size: 20)
+                  : null,
             ),
             const SizedBox(width: 10),
             Text(widget.name, style: const TextStyle(fontSize: 18)),
@@ -497,23 +504,21 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
                         ),
                         decoration: BoxDecoration(
                           color: isMe
-                              ? JuiceTheme.primaryTangerine
-                              : Colors.grey[200],
-                          borderRadius:
-                              BorderRadius.circular(20).copyWith(
+                              ? const Color(0xFF1C1C1E)
+                              : Colors.grey[100],
+                          borderRadius: BorderRadius.circular(18).copyWith(
                             bottomRight: isMe
-                                ? const Radius.circular(0)
-                                : const Radius.circular(20),
+                                ? const Radius.circular(4)
+                                : const Radius.circular(18),
                             bottomLeft: isMe
-                                ? const Radius.circular(20)
-                                : const Radius.circular(0),
+                                ? const Radius.circular(18)
+                                : const Radius.circular(4),
                           ),
                         ),
                         child: Text(
                           msg.text,
                           style: TextStyle(
-                            color:
-                                isMe ? Colors.white : Colors.black87,
+                            color: isMe ? Colors.white : Colors.black87,
                           ),
                         ),
                       ),
