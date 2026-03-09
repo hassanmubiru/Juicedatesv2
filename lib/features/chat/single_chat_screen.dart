@@ -324,10 +324,9 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: JuiceTheme.primaryTangerine.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                          color: JuiceTheme.primaryTangerine.withValues(alpha: 0.3)),
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.grey.shade200),
                     ),
                     child: Row(
                       children: [
@@ -632,13 +631,9 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
                       color: selected
-                          ? JuiceTheme.primaryTangerine.withValues(alpha: 0.15)
+                          ? Colors.grey[200]
                           : Colors.transparent,
-                      borderRadius: BorderRadius.circular(20),
-                      border: selected
-                          ? Border.all(
-                              color: JuiceTheme.primaryTangerine, width: 1)
-                          : null,
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: Center(
                       child: Text(cats[i].$1,
