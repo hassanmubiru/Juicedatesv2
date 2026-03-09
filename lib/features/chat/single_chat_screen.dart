@@ -557,10 +557,8 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
                 icon: Icon(
                   _showEmojiPanel
                       ? Icons.keyboard_rounded
-                      : Icons.emoji_emotions_rounded,
-                  color: _showEmojiPanel
-                      ? JuiceTheme.primaryTangerine
-                      : Colors.grey[600],
+                      : Icons.emoji_emotions_outlined,
+                  color: Colors.grey[500],
                 ),
                 onPressed: () {
                   if (!_showEmojiPanel) {
@@ -571,16 +569,9 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
                   setState(() => _showEmojiPanel = !_showEmojiPanel);
                 },
               ),
-              // Mic
-              IconButton(
-                icon: Icon(Icons.mic_rounded,
-                    color: _currentTier >= 2 ? Colors.orange : Colors.grey),
-                onPressed: () {},
-              ),
               // Gift
               IconButton(
-                icon: const Icon(Icons.card_giftcard_rounded,
-                    color: JuiceTheme.primaryTangerine),
+                icon: Icon(Icons.card_giftcard_outlined, color: Colors.grey[500]),
                 onPressed: _showGiftPicker,
                 tooltip: 'Send a gift',
               ),
