@@ -29,6 +29,9 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
   int? _likesRemaining;
   // null = unlimited (premium), int = super likes left today
   int? _superLikesRemaining;
+  // Undo support
+  JuiceUser? _lastSwipedUser;
+  CardSwiperDirection? _lastSwipeDirection;
 
   @override
   void initState() {
@@ -88,6 +91,9 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
     } else if (direction == CardSwiperDirection.left) {
       await _service.passUser(uid, swipedUser.uid);
     }
+    // Remember for undo
+    _lastSwipedUser = swipedUser;
+    _lastSwipeDirection = direction;
     return true;
   }
 
@@ -130,7 +136,28 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
     }
   }
 
-  void _showDailyLimitDialog() {
+  Future<bool> _onUndoSwipe(
+      int? previousIndex, int currentIndex, CardSwiperDirection direction) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null || _lastSwipedUser == null) return true;
+    final undoneUser = _lastSwipedUser!;
+    // Reverse: undo the pass from user's passedUids
+    if (_lastSwipeDirection == CardSwiperDirection.left) {
+      await _service.updateUserProfile(uid, {
+        'passedUids': FieldValue.arrayRemove([undoneUser.uid]),
+      });
+    } else if (_lastSwipeDirection == CardSwiperDirection.right) {
+      // Undo the like (remove from likedUids, and restore daily count)
+      await _service.updateUserProfile(uid, {
+        'likedUids': FieldValue.arrayRemove([undoneUser.uid]),
+      });
+      if (_likesRemaining != null && mounted) {
+        setState(() => _likesRemaining = _likesRemaining! + 1);
+      }
+    }
+    if (mounted) setState(() { _lastSwipedUser = null; _lastSwipeDirection = null; });
+    return true;
+  }
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -356,6 +383,7 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
               );
             },
             onSwipe: _onSwipe,
+            onUndo: _onUndoSwipe,
             onEnd: () => setState(() => _feedUsers = []),
           ),
         ),
@@ -374,6 +402,16 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // Rewind ↩
+          _FeedActionBtn(
+            heroTag: 'undo_btn',
+            icon: Icons.replay_rounded,
+            color: Colors.amber.shade600,
+            diameter: 48,
+            onTap: _lastSwipedUser == null
+                ? null
+                : () => _cardController.undo(),
+          ),
           // Pass ✕
           _FeedActionBtn(
             heroTag: 'pass_btn',
