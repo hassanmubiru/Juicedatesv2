@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import '../../core/network/firestore_service.dart';
 import '../../core/theme/juice_theme.dart';
