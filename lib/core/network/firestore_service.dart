@@ -369,6 +369,8 @@ class FirestoreService {
       'messageCount': 0,
       'lastMessage': '',
       'lastMessageTime': FieldValue.serverTimestamp(),
+      'createdAt': FieldValue.serverTimestamp(),
+      'readByUids': [],
     });
     final doc = await ref.get();
     final match = JuiceMatch.fromFirestore(doc);
@@ -396,6 +398,25 @@ class FirestoreService {
     final doc = await _db.collection('matches').doc(matchId).get();
     if (!doc.exists) return null;
     return JuiceMatch.fromFirestore(doc);
+  }
+
+  /// Marks a match as read by [uid].
+  Future<void> markMatchRead(String matchId, String uid) async {
+    await _db.collection('matches').doc(matchId).update({
+      'readByUids': FieldValue.arrayUnion([uid]),
+    });
+  }
+
+  /// Stream of how many NEW (unread) matches the user has.
+  Stream<int> getUnreadMatchCount(String uid) {
+    return _db
+        .collection('matches')
+        .where('users', arrayContains: uid)
+        .snapshots()
+        .map((snap) => snap.docs
+            .where((d) =>
+                !List<String>.from(d.data()['readByUids'] ?? []).contains(uid))
+            .length);
   }
 
   Future<void> updateMatchTier(String matchId, int tier, int messageCount) async {
