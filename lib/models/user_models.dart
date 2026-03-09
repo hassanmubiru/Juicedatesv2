@@ -23,6 +23,9 @@ class JuiceUser {
   final String? fcmToken;
   final bool isAdmin;
   final bool isBanned;
+  final String? sexualOrientation;
+  final String? university;
+  final bool showAge;
 
   JuiceUser({
     required this.uid,
@@ -46,6 +49,9 @@ class JuiceUser {
     this.fcmToken,
     this.isAdmin = false,
     this.isBanned = false,
+    this.sexualOrientation,
+    this.university,
+    this.showAge = true,
   });
 
   Map<String, dynamic> toJson() => {
@@ -70,6 +76,9 @@ class JuiceUser {
         'fcmToken': fcmToken,
         'isAdmin': isAdmin,
         'isBanned': isBanned,
+        'sexualOrientation': sexualOrientation,
+        'university': university,
+        'showAge': showAge,
       };
 
   factory JuiceUser.fromFirestore(DocumentSnapshot doc) {
@@ -96,6 +105,9 @@ class JuiceUser {
       fcmToken: data['fcmToken'],
       isAdmin: data['isAdmin'] ?? false,
       isBanned: data['isBanned'] ?? false,
+      sexualOrientation: data['sexualOrientation'],
+      university: data['university'],
+      showAge: data['showAge'] ?? true,
     );
   }
 }
@@ -110,6 +122,8 @@ class JuiceMatch {
   final int messageCount;
   final String lastMessage;
   final DateTime lastMessageTime;
+  final DateTime? createdAt;
+  final List<String> readByUids;
 
   JuiceMatch({
     required this.matchId,
@@ -121,6 +135,8 @@ class JuiceMatch {
     this.messageCount = 0,
     this.lastMessage = '',
     required this.lastMessageTime,
+    this.createdAt,
+    this.readByUids = const [],
   });
 
   String getPartnerUid(String myUid) =>
@@ -146,6 +162,8 @@ class JuiceMatch {
       lastMessage: data['lastMessage'] ?? '',
       lastMessageTime:
           (data['lastMessageTime'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
+      readByUids: List<String>.from(data['readByUids'] ?? []),
     );
   }
 }
