@@ -19,6 +19,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isPremium = false;
   bool _invisibleMode = true;
   bool _newSparks = true;
+  bool _showAge = true;
   int _profileViewCount = 0;
 
   @override
@@ -46,6 +47,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted && user != null) {
       setState(() {
         _isPremium = user.isPremium;
+        _showAge = user.showAge;
       });
     }
     // Load profile view count (non-blocking)
@@ -74,6 +76,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _newSparks = val);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('newSparks', val);
+  }
+
+  Future<void> _toggleShowAge(bool val) async {
+    setState(() => _showAge = val);
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      await FirestoreService().updateUserProfile(uid, {'showAge': val});
+    }
   }
 
   Future<void> _clearGpsCache() async {
@@ -195,6 +205,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: const Text('Invisible Mode'),
             subtitle: const Text('Hide your online status'),
             secondary: const Icon(Icons.visibility_off_outlined),
+          ),
+          SwitchListTile(
+            value: _showAge,
+            onChanged: _toggleShowAge,
+            title: const Text('Show My Age'),
+            subtitle: const Text('Display age on your profile card'),
+            secondary: const Icon(Icons.cake_outlined),
           ),
           ListTile(
             leading: const Icon(Icons.location_off_outlined),
