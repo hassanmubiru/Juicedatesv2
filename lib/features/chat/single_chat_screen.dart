@@ -691,22 +691,18 @@ class _ReportDialogState extends State<_ReportDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Report \${widget.name}'),
+      title: Text('Report ${widget.name}'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
-        children: [RadioGroup<String>(
-          groupValue: _selected,
-          onChanged: (v) => setState(() => _selected = v),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: _reasons
-                .map((r) => RadioListTile<String>(
-                      value: r,
-                      title: Text(r),
-                    ))
-                .toList(),
-          ),
-        )],
+        children: _reasons
+            .map((r) => RadioListTile<String>(
+                  value: r,
+                  groupValue: _selected,
+                  dense: true,
+                  title: Text(r),
+                  onChanged: (v) => setState(() => _selected = v),
+                ))
+            .toList(),
       ),
       actions: [
         TextButton(
