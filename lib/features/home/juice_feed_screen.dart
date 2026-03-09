@@ -137,19 +137,19 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
     }
   }
 
-  Future<bool> _onUndoSwipe(
-      int? previousIndex, int currentIndex, CardSwiperDirection direction) async {
+  bool _onUndoSwipe(
+      int? previousIndex, int currentIndex, CardSwiperDirection direction) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null || _lastSwipedUser == null) return true;
     final undoneUser = _lastSwipedUser!;
-    // Reverse: undo the pass from user's passedUids
-    if (_lastSwipeDirection == CardSwiperDirection.left) {
-      await _service.updateUserProfile(uid, {
+    final undoneDirection = _lastSwipeDirection;
+    // Fire-and-forget Firestore reversal
+    if (undoneDirection == CardSwiperDirection.left) {
+      _service.updateUserProfile(uid, {
         'passedUids': FieldValue.arrayRemove([undoneUser.uid]),
       });
-    } else if (_lastSwipeDirection == CardSwiperDirection.right) {
-      // Undo the like (remove from likedUids, and restore daily count)
-      await _service.updateUserProfile(uid, {
+    } else if (undoneDirection == CardSwiperDirection.right) {
+      _service.updateUserProfile(uid, {
         'likedUids': FieldValue.arrayRemove([undoneUser.uid]),
       });
       if (_likesRemaining != null && mounted) {
@@ -159,6 +159,8 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
     if (mounted) setState(() { _lastSwipedUser = null; _lastSwipeDirection = null; });
     return true;
   }
+
+  void _showDailyLimitDialog() {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(

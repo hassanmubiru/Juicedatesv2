@@ -283,7 +283,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _sexualOrientation,
+              initialValue: _sexualOrientation,
               decoration: InputDecoration(
                 labelText: 'Sexual Orientation',
                 prefixIcon: const Icon(Icons.favorite_border_rounded,
