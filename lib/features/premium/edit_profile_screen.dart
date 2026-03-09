@@ -31,6 +31,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   List<String?> _photoUrls = List.filled(6, null);
   final List<File?> _newPhotos = List.filled(6, null);
   bool _loadingLocation = false;
+  String? _sexualOrientation;
+  late TextEditingController _universityCtrl;
+
+  static const List<String> _orientationOptions = [
+    'Straight',
+    'Gay',
+    'Lesbian',
+    'Bisexual',
+    'Other',
+    'Prefer not to say',
+  ];
 
   final List<String> _availableInterests = [
     'Hiking', 'Reading', 'Cooking', 'Travel', 'Gaming', 'Music',
@@ -59,6 +70,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _interests = List<String>.from(user?.interests ?? []);
       _photoUrls = List.generate(6, (i) =>
           i < (user?.photos.length ?? 0) ? user!.photos[i] : null);
+      _sexualOrientation = user?.sexualOrientation;
+      _universityCtrl = TextEditingController(text: user?.university ?? '');
       _loading = false;
     });
   }
@@ -133,6 +146,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'interests': _interests,
         'photos': updatedUrls,
         if (updatedUrls.isNotEmpty) 'photoUrl': updatedUrls.first,
+        if (_sexualOrientation != null)
+          'sexualOrientation': _sexualOrientation,
+        'university': _universityCtrl.text.trim(),
       });
 
       if (!mounted) return;
@@ -156,6 +172,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _cityCtrl.dispose();
     _ageCtrl.dispose();
     _bioCtrl.dispose();
+    _universityCtrl.dispose();
     super.dispose();
   }
 
@@ -257,6 +274,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
+            ),
+            const SizedBox(height: 16),
+            _buildField(
+              _universityCtrl,
+              'University / School',
+              Icons.school_rounded,
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _sexualOrientation,
+              decoration: InputDecoration(
+                labelText: 'Sexual Orientation',
+                prefixIcon: const Icon(Icons.favorite_border_rounded,
+                    color: JuiceTheme.primaryTangerine),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              items: _orientationOptions
+                  .map((o) => DropdownMenuItem(value: o, child: Text(o)))
+                  .toList(),
+              onChanged: (val) =>
+                  setState(() => _sexualOrientation = val),
             ),
             const SizedBox(height: 8),
             const Text('Interests',
