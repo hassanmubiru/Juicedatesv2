@@ -57,7 +57,9 @@ class JuiceCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          '${user.displayName}, ${user.age}',
+                          user.showAge
+                              ? '${user.displayName}, ${user.age}'
+                              : user.displayName,
                           style: const TextStyle(
                             color: Colors.white, fontSize: 26,
                             fontWeight: FontWeight.bold,
