@@ -23,6 +23,8 @@ dependencies:
   permission_handler: ^11.3.1
   # google_sign_in removed
   intl: ^0.19.0
+  share_plus: ^10.1.4
+  firebase_storage: ^12.4.0
 
 dev_dependencies:
   flutter_test:
