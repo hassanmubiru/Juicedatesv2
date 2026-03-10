@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  # ─── Analyze & Test ──────────────────────────────────────────────────────────
+  # - Analyze & Test -
   analyze:
     name: Analyze & Test
     runs-on: ubuntu-latest
@@ -29,7 +29,7 @@ jobs:
       - name: Test
         run: flutter test --reporter=expanded
 
-  # ─── Build Android APK (debug on PRs, release on main) ───────────────────────
+  # - Build Android APK (debug on PRs, release on main) -
   build-android:
     name: Build Android
     runs-on: ubuntu-latest
@@ -92,7 +92,7 @@ jobs:
             Auto-build from commit ${{ github.sha }}
             ${{ github.event.commits[0].message }}
 
-  # ─── Build & Deploy Flutter Web ──────────────────────────────────────────────
+  # - Build & Deploy Flutter Web -
   deploy-web:
     name: Deploy Web
     runs-on: ubuntu-latest
@@ -116,7 +116,7 @@ jobs:
       - name: Copy Flutter web build into hosting dir
         run: |
           cp -r build/web/* hosting/
-          # Keep admin.html and screenshots — they are already in hosting/
+          # Keep admin.html and screenshots - they are already in hosting/
 
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
