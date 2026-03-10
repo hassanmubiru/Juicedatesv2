@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../blocs/auth_bloc.dart';
 import '../../core/network/firestore_service.dart';
 import '../../core/theme/juice_theme.dart';
@@ -93,6 +94,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('GPS cache cleared.')),
       );
+    }
+  }
+
+  Future<void> _inviteFriends() async {
+    await SharePlus.instance.share(
+      ShareParams(
+        text:
+            '❤️ Join me on JuiceDates — a values-first dating app with an 85% reply rate!\n\nDownload it here: https://juicedates.app',
+        subject: 'Join JuiceDates',
+      ),
+    );
+  }
+
+  Future<void> _deleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Delete Account?'),
+        content: const Text(
+          'This will permanently delete your profile, matches, and all data. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    await FirestoreService().deleteAccount(uid);
+    await FirebaseAuth.instance.currentUser?.delete();
+    if (mounted) {
+      context.read<AuthBloc>().add(AuthLoggedOut());
+      Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
     }
   }
 
@@ -226,6 +268,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: const Text('New Sparks'),
             subtitle: const Text('Notify me when I get a new match'),
             secondary: const Icon(Icons.flash_on_rounded),
+          ),
+          const _SectionHeader(title: 'Community'),
+          ListTile(
+            leading: const Icon(Icons.people_alt_outlined),
+            title: const Text('Invite Friends'),
+            subtitle: const Text('Share JuiceDates with people you know'),
+            trailing: const Icon(Icons.share_rounded),
+            onTap: _inviteFriends,
+          ),
+          const _SectionHeader(title: 'Danger Zone'),
+          ListTile(
+            leading: const Icon(Icons.delete_forever_rounded, color: Colors.red),
+            title: const Text('Delete Account',
+                style: TextStyle(color: Colors.red)),
+            subtitle: const Text('Permanently remove your account and data'),
+            onTap: _deleteAccount,
           ),
           const SizedBox(height: 48),
           Padding(
