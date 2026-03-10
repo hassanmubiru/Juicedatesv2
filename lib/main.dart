@@ -154,10 +154,25 @@ class _JuiceDatesAppState extends State<JuiceDatesApp> {
 
     switch (type) {
       case 'match':
+        // Navigate to home (matches tab is index 1)
+        nav.pushNamedAndRemoveUntil('/home', (_) => false);
+        break;
       case 'message':
-        // Navigate to the matches list; deep-link into the specific chat
-        // if a matchId is provided.
-        nav.pushNamed('/home');
+        final matchId = data['matchId'] as String?;
+        final partnerName = data['partnerName'] as String? ?? 'Match';
+        final partnerUid = data['partnerUid'] as String?;
+        if (matchId != null) {
+          nav.pushNamedAndRemoveUntil('/home', (_) => false);
+          nav.push(MaterialPageRoute(
+            builder: (_) => SingleChatScreen(
+              name: partnerName,
+              matchId: matchId,
+              partnerUid: partnerUid,
+            ),
+          ));
+        } else {
+          nav.pushNamedAndRemoveUntil('/home', (_) => false);
+        }
         break;
     }
   }
