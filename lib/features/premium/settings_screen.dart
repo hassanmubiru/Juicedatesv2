@@ -51,6 +51,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _isPremium = user.isPremium;
         _showAge = user.showAge;
+        _user = user;
       });
     }
     // Load profile view count (non-blocking)
@@ -163,6 +164,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: [
+          // ── Profile Strength card ──────────────────────────────────────────
+          if (_user != null) _ProfileStrengthCard(user: _user!),
           const _SectionHeader(title: 'Account Settings'),
           ListTile(
             leading: const Icon(Icons.person_outline),
