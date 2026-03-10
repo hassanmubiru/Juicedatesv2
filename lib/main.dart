@@ -23,6 +23,7 @@ import 'features/premium/settings_screen.dart';
 import 'features/premium/edit_profile_screen.dart';
 import 'features/calling/video_call_screen.dart';
 import 'features/calling/audio_call_screen.dart';
+import 'features/chat/single_chat_screen.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {

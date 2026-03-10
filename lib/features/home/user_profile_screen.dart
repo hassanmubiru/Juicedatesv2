@@ -6,6 +6,126 @@ import '../../core/theme/juice_theme.dart';
 import '../../core/utils/juice_engine.dart';
 import '../../models/user_models.dart';
 
+/// Show a bottom sheet to block or report a user.
+Future<void> showBlockReportSheet(BuildContext context, JuiceUser target) async {
+  final myUid = FirebaseAuth.instance.currentUser?.uid;
+  if (myUid == null) return;
+  final service = FirestoreService();
+
+  await showModalBottomSheet(
+    context: context,
+    shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+    builder: (ctx) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 8),
+          Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 16),
+          Text('${target.displayName}',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 8),
+          ListTile(
+            leading: const Icon(Icons.block_rounded, color: Colors.orange),
+            title: const Text('Block user'),
+            subtitle: const Text('They will no longer see you or be shown to you'),
+            onTap: () async {
+              Navigator.pop(ctx);
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (_) => AlertDialog(
+                  title: Text('Block ${target.displayName}?'),
+                  content: const Text('They will be removed from your feed and cannot contact you.'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                    TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Block', style: TextStyle(color: Colors.orange))),
+                  ],
+                ),
+              );
+              if (confirm == true) {
+                await service.blockUser(myUid, target.uid);
+                if (context.mounted) {
+                  Navigator.pop(context); // pop profile screen
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('${target.displayName} blocked')));
+                }
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.flag_rounded, color: Colors.red),
+            title: const Text('Report user'),
+            subtitle: const Text('Submit a report to our moderation team'),
+            onTap: () {
+              Navigator.pop(ctx);
+              _showReportReasonSheet(context, myUid, target, service);
+            },
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    ),
+  );
+}
+
+void _showReportReasonSheet(BuildContext context, String myUid, JuiceUser target, FirestoreService service) {
+  const reasons = [
+    'Fake profile / impersonation',
+    'Inappropriate photos',
+    'Harassment or bullying',
+    'Spam or scam',
+    'Underage user',
+    'Other',
+  ];
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+    builder: (ctx) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 8),
+          Center(
+            child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2))),
+          ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+            child: Text('Why are you reporting this user?',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ),
+          ...reasons.map((r) => ListTile(
+            leading: const Icon(Icons.report_outlined),
+            title: Text(r),
+            onTap: () async {
+              Navigator.pop(ctx);
+              await service.reportUser(myUid, target.uid, r);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Report submitted. Thank you for keeping JuiceDates safe.')));
+              }
+            },
+          )),
+          const SizedBox(height: 8),
+        ],
+      ),
+    ),
+  );
+}
+
 class UserProfileScreen extends StatefulWidget {
   final JuiceUser user;
   final double sparksScore;
@@ -76,6 +196,20 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               ),
               onPressed: () => Navigator.pop(context),
             ),
+            actions: [
+              IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.black45,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.more_vert_rounded,
+                      color: Colors.white, size: 18),
+                ),
+                onPressed: () => showBlockReportSheet(context, user),
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 fit: StackFit.expand,
