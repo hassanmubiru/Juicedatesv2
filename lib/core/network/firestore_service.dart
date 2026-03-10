@@ -461,6 +461,8 @@ class FirestoreService {
       'timestamp': FieldValue.serverTimestamp(),
       'type': message.type,
       if (message.giftEmoji != null) 'giftEmoji': message.giftEmoji,
+      // Sender has already "read" the message they just sent
+      'readBy': [message.senderId],
     });
     // Atomically bump messageCount and lastMessage in the same write
     batch.update(_db.collection('matches').doc(matchId), {
@@ -603,6 +605,100 @@ class FirestoreService {
 
   Future<void> markWinkSeen(String winkId) async {
     await _db.collection('winks').doc(winkId).update({'seen': true});
+  }
+
+  // ── Boost (Tinder-style – 30-min visibility bump) ─────────────────────────
+
+  /// Sets [boostExpiresAt] for the given user to 30 minutes from now.
+  Future<void> boostUser(String uid) async {
+    final expiresAt = DateTime.now().add(const Duration(minutes: 30));
+    await _db.collection('users').doc(uid).update({
+      'boostExpiresAt': Timestamp.fromDate(expiresAt),
+    });
+  }
+
+  /// Returns true when the user currently has an active boost.
+  Future<bool> isBoostActive(String uid) async {
+    final doc = await _db.collection('users').doc(uid).get();
+    final raw = doc.data()?['boostExpiresAt'];
+    if (raw == null) return false;
+    return (raw as Timestamp).toDate().isAfter(DateTime.now());
+  }
+
+  // ── Top Picks (daily curated – premium) ──────────────────────────────────
+
+  /// Returns up to 10 high-compatibility users the current user has NOT yet
+  /// liked/passed/blocked.  Premium gate enforced by the call site.
+  Future<List<JuiceUser>> getTopPicks(String uid) async {
+    final currentDoc = await _db.collection('users').doc(uid).get();
+    final current = JuiceUser.fromFirestore(currentDoc);
+    final excluded = <String>{
+      ...current.likedUids,
+      ...current.passedUids,
+      ...current.blockedUids,
+      uid,
+    };
+    final snap = await _db.collection('users').limit(200).get();
+    final candidates = snap.docs
+        .map((d) => JuiceUser.fromFirestore(d))
+        .where((u) => !excluded.contains(u.uid) && !u.isAdmin && !u.isBanned)
+        .toList();
+    candidates.sort((a, b) {
+      final sA = JuiceEngine.computeSparks(current.juiceProfile, a.juiceProfile);
+      final sB = JuiceEngine.computeSparks(current.juiceProfile, b.juiceProfile);
+      return sB.compareTo(sA);
+    });
+    return candidates.take(10).toList();
+  }
+
+  // ── Read Receipts (per-message) ───────────────────────────────────────────
+
+  /// Marks all messages in [matchId] as read by [uid] (sets readBy on each).
+  Future<void> markMessagesRead(String matchId, String uid) async {
+    try {
+      final snap = await _db
+          .collection('matches')
+          .doc(matchId)
+          .collection('messages')
+          .where('senderId', isNotEqualTo: uid)
+          .get();
+      final batch = _db.batch();
+      for (final doc in snap.docs) {
+        final readBy = List<String>.from(doc.data()['readBy'] ?? []);
+        if (!readBy.contains(uid)) {
+          batch.update(doc.reference, {
+            'readBy': FieldValue.arrayUnion([uid]),
+          });
+        }
+      }
+      await batch.commit();
+    } catch (_) {
+      // Non-critical; ignore errors silently
+    }
+  }
+
+  // ── Delete Account ────────────────────────────────────────────────────────
+
+  /// Hard-deletes the user's Firestore document and signs them out.
+  /// Does NOT delete Firebase Auth account (requires re-auth on client for that).
+  Future<void> deleteAccount(String uid) async {
+    // Delete profile views subcollection (best effort)
+    try {
+      final views = await _db
+          .collection('users')
+          .doc(uid)
+          .collection('profileViews')
+          .get();
+      final batch = _db.batch();
+      for (final d in views.docs) {
+        batch.delete(d.reference);
+      }
+      await batch.commit();
+    } catch (_) {}
+
+    // Remove from liked/passed lists of others would require a cloud function;
+    // here we just delete the user document itself.
+    await _db.collection('users').doc(uid).delete();
   }
 }
 

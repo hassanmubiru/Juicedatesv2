@@ -161,7 +161,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           children: [
                             Expanded(
                               child: Text(
-                                '${user.displayName}, ${user.age}',
+                                user.showAge
+                                    ? '${user.displayName}, ${user.age}'
+                                    : user.displayName,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 30,
@@ -191,6 +193,50 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             ),
                           ],
                         ),
+                        // Job / company line
+                        if ((user.jobTitle != null && user.jobTitle!.isNotEmpty) ||
+                            (user.company != null && user.company!.isNotEmpty)) ...[
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              const Icon(Icons.work_outline_rounded,
+                                  color: Colors.white60, size: 14),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  [
+                                    if (user.jobTitle != null && user.jobTitle!.isNotEmpty)
+                                      user.jobTitle!,
+                                    if (user.company != null && user.company!.isNotEmpty)
+                                      'at ${user.company!}',
+                                  ].join(' '),
+                                  style: const TextStyle(
+                                      color: Colors.white60, fontSize: 13),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                        // University line
+                        if (user.university != null && user.university!.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              const Icon(Icons.school_outlined,
+                                  color: Colors.white60, size: 14),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  user.university!,
+                                  style: const TextStyle(
+                                      color: Colors.white60, fontSize: 13),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),

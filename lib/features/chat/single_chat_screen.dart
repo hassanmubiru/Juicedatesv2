@@ -110,6 +110,8 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
         _myName = match.userNames[_myUid] ?? '';
       });
     }
+    // Mark all incoming messages as read
+    _service.markMessagesRead(widget.matchId, _myUid);
     // Load user profiles for icebreaker suggestion generation
     if (widget.partnerUid != null) {
       final partner = await _service.getUserOnce(widget.partnerUid!);
@@ -514,11 +516,34 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
                                 : const Radius.circular(4),
                           ),
                         ),
-                        child: Text(
-                          msg.text,
-                          style: TextStyle(
-                            color: isMe ? Colors.white : Colors.black87,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              msg.text,
+                              style: TextStyle(
+                                color: isMe ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                            if (isMe) ...[
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    msg.readBy.contains(widget.partnerUid)
+                                        ? Icons.done_all_rounded
+                                        : Icons.done_rounded,
+                                    size: 14,
+                                    color: msg.readBy.contains(widget.partnerUid)
+                                        ? JuiceTheme.primaryTangerine
+                                        : Colors.white38,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
                         ),
                       ),
                     );

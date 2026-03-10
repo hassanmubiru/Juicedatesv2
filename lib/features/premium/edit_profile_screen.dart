@@ -33,6 +33,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _loadingLocation = false;
   String? _sexualOrientation;
   late TextEditingController _universityCtrl;
+  late TextEditingController _jobTitleCtrl;
+  late TextEditingController _companyCtrl;
 
   static const List<String> _orientationOptions = [
     'Straight',
@@ -72,6 +74,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           i < (user?.photos.length ?? 0) ? user!.photos[i] : null);
       _sexualOrientation = user?.sexualOrientation;
       _universityCtrl = TextEditingController(text: user?.university ?? '');
+      _jobTitleCtrl = TextEditingController(text: user?.jobTitle ?? '');
+      _companyCtrl = TextEditingController(text: user?.company ?? '');
       _loading = false;
     });
   }
@@ -149,6 +153,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         if (_sexualOrientation != null)
           'sexualOrientation': _sexualOrientation,
         'university': _universityCtrl.text.trim(),
+        'jobTitle': _jobTitleCtrl.text.trim(),
+        'company': _companyCtrl.text.trim(),
       });
 
       if (!mounted) return;
@@ -173,6 +179,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _ageCtrl.dispose();
     _bioCtrl.dispose();
     _universityCtrl.dispose();
+    _jobTitleCtrl.dispose();
+    _companyCtrl.dispose();
     super.dispose();
   }
 
@@ -274,6 +282,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
+            ),
+            const SizedBox(height: 16),
+            _buildField(
+              _jobTitleCtrl,
+              'Job Title',
+              Icons.work_outline_rounded,
+            ),
+            const SizedBox(height: 16),
+            _buildField(
+              _companyCtrl,
+              'Company',
+              Icons.business_outlined,
             ),
             const SizedBox(height: 16),
             _buildField(

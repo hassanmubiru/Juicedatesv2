@@ -10,6 +10,8 @@ import '../../models/user_models.dart';
 import '../../widgets/juice_card.dart';
 import 'user_profile_screen.dart';
 import '../moments/moments_bar.dart';
+import '../boost/boost_screen.dart';
+import 'top_picks_screen.dart';
 
 class JuiceFeedScreen extends StatefulWidget {
   const JuiceFeedScreen({super.key});
@@ -220,6 +222,24 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
       appBar: AppBar(
         title: const Text('Juice Feed'),
         actions: [
+          // Top Picks button
+          IconButton(
+            icon: const Icon(Icons.local_fire_department_rounded),
+            tooltip: 'Top Picks',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const TopPicksScreen()),
+            ),
+          ),
+          // Boost button
+          IconButton(
+            icon: const Icon(Icons.bolt_rounded),
+            tooltip: 'Boost',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const BoostScreen()),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.tune_rounded),
             onPressed: () => Navigator.pushNamed(context, '/filters'),

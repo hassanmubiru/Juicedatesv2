@@ -26,6 +26,16 @@ class JuiceUser {
   final String? sexualOrientation;
   final String? university;
   final bool showAge;
+  final String? jobTitle;
+  final String? company;
+  // Discovery settings
+  final double maxDistance;
+  final int ageRangeMin;
+  final int ageRangeMax;
+  final String showGender; // 'everyone' | 'men' | 'women'
+  final String? passportCity;
+  // Boost (Tinder-style)
+  final DateTime? boostExpiresAt;
 
   JuiceUser({
     required this.uid,
@@ -52,6 +62,14 @@ class JuiceUser {
     this.sexualOrientation,
     this.university,
     this.showAge = true,
+    this.jobTitle,
+    this.company,
+    this.maxDistance = 100,
+    this.ageRangeMin = 18,
+    this.ageRangeMax = 50,
+    this.showGender = 'everyone',
+    this.passportCity,
+    this.boostExpiresAt,
   });
 
   Map<String, dynamic> toJson() => {
@@ -79,6 +97,16 @@ class JuiceUser {
         'sexualOrientation': sexualOrientation,
         'university': university,
         'showAge': showAge,
+        'jobTitle': jobTitle,
+        'company': company,
+        'maxDistance': maxDistance,
+        'ageRangeMin': ageRangeMin,
+        'ageRangeMax': ageRangeMax,
+        'showGender': showGender,
+        'passportCity': passportCity,
+        'boostExpiresAt': boostExpiresAt != null
+            ? Timestamp.fromDate(boostExpiresAt!)
+            : null,
       };
 
   factory JuiceUser.fromFirestore(DocumentSnapshot doc) {
@@ -108,6 +136,14 @@ class JuiceUser {
       sexualOrientation: data['sexualOrientation'],
       university: data['university'],
       showAge: data['showAge'] ?? true,
+      jobTitle: data['jobTitle'],
+      company: data['company'],
+      maxDistance: (data['maxDistance'] as num?)?.toDouble() ?? 100,
+      ageRangeMin: (data['ageRangeMin'] as num?)?.toInt() ?? 18,
+      ageRangeMax: (data['ageRangeMax'] as num?)?.toInt() ?? 50,
+      showGender: data['showGender'] ?? 'everyone',
+      passportCity: data['passportCity'],
+      boostExpiresAt: (data['boostExpiresAt'] as Timestamp?)?.toDate(),
     );
   }
 }
@@ -178,6 +214,8 @@ class JuiceMessage {
   final String type;
   /// only set when type == 'gift'
   final String? giftEmoji;
+  /// UIDs that have read (seen) this message
+  final List<String> readBy;
 
   JuiceMessage({
     required this.senderId,
@@ -187,6 +225,7 @@ class JuiceMessage {
     required this.timestamp,
     this.type = 'text',
     this.giftEmoji,
+    this.readBy = const [],
   });
 
   factory JuiceMessage.fromFirestore(Map<String, dynamic> data) {
@@ -199,6 +238,7 @@ class JuiceMessage {
           (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
       type: data['type'] ?? 'text',
       giftEmoji: data['giftEmoji'],
+      readBy: List<String>.from(data['readBy'] ?? []),
     );
   }
 }
