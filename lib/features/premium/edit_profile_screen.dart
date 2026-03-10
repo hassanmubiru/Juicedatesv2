@@ -126,6 +126,52 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     });
   }
 
+  /// Move photo at [fromIndex] to a different slot chosen by the user.
+  void _reorderPhoto(int fromIndex) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: Text('Move photo to slot…',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            ),
+            ...List.generate(6, (toIndex) {
+              if (toIndex == fromIndex) return const SizedBox.shrink();
+              final hasTarget =
+                  _newPhotos[toIndex] != null || _photoUrls[toIndex] != null;
+              return ListTile(
+                leading: Icon(
+                  hasTarget ? Icons.swap_horiz_rounded : Icons.arrow_forward_rounded,
+                  color: JuiceTheme.primaryTangerine,
+                ),
+                title: Text(toIndex == 0
+                    ? 'Slot ${toIndex + 1} (Main photo)'
+                    : 'Slot ${toIndex + 1}${hasTarget ? ' (swap)' : ''}'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  setState(() {
+                    // Swap both slots
+                    final tmpFile = _newPhotos[toIndex];
+                    final tmpUrl = _photoUrls[toIndex];
+                    _newPhotos[toIndex] = _newPhotos[fromIndex];
+                    _photoUrls[toIndex] = _photoUrls[fromIndex];
+                    _newPhotos[fromIndex] = tmpFile;
+                    _photoUrls[fromIndex] = tmpUrl;
+                  });
+                },
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _save() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
@@ -199,6 +245,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           children: [
             const Text('Photos',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            const Text('Tap to add · Long-press to reorder · Swipe to delete',
+                style: TextStyle(fontSize: 12, color: Colors.grey)),
             const SizedBox(height: 12),
             GridView.count(
               shrinkWrap: true,
@@ -209,37 +258,88 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               children: List.generate(6, (i) {
                 final newFile = _newPhotos[i];
                 final existingUrl = _photoUrls[i];
+                final hasPhoto = newFile != null || existingUrl != null;
                 return GestureDetector(
                   onTap: () => _pickPhoto(i),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[300]!),
-                      image: newFile != null
-                          ? DecorationImage(
-                              image: FileImage(newFile), fit: BoxFit.cover)
-                          : existingUrl != null
+                  onLongPress: hasPhoto ? () => _reorderPhoto(i) : null,
+                  child: Stack(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[300]!),
+                          image: newFile != null
                               ? DecorationImage(
-                                  image: NetworkImage(existingUrl),
-                                  fit: BoxFit.cover)
-                              : null,
-                    ),
-                    child: (newFile == null && existingUrl == null)
-                        ? const Icon(Icons.add_a_photo_rounded,
-                            color: Colors.grey)
-                        : Align(
-                            alignment: Alignment.topRight,
+                                  image: FileImage(newFile), fit: BoxFit.cover)
+                              : existingUrl != null
+                                  ? DecorationImage(
+                                      image: NetworkImage(existingUrl),
+                                      fit: BoxFit.cover)
+                                  : null,
+                        ),
+                        child: !hasPhoto
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.add_a_photo_rounded,
+                                        color: Colors.grey[400], size: 28),
+                                    if (i == 0)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 4),
+                                        child: Text('Main',
+                                            style: TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.grey[500])),
+                                      ),
+                                  ],
+                                ),
+                              )
+                            : null,
+                      ),
+                      // Delete button for filled slots
+                      if (hasPhoto)
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: GestureDetector(
+                            onTap: () => setState(() {
+                              _photoUrls[i] = null;
+                              _newPhotos[i] = null;
+                            }),
                             child: Container(
-                              margin: const EdgeInsets.all(4),
+                              width: 22,
+                              height: 22,
                               decoration: const BoxDecoration(
-                                  color: Colors.white70,
-                                  shape: BoxShape.circle),
-                              child: const Icon(Icons.edit_rounded,
-                                  size: 18,
-                                  color: JuiceTheme.primaryTangerine),
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.close_rounded,
+                                  size: 14, color: Colors.white),
                             ),
                           ),
+                        ),
+                      // "Main" badge on first slot
+                      if (i == 0 && hasPhoto)
+                        Positioned(
+                          bottom: 4,
+                          left: 4,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: JuiceTheme.primaryTangerine,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text('Main',
+                                style: TextStyle(
+                                    fontSize: 9,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                    ],
                   ),
                 );
               }),
