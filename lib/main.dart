@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
 import 'core/theme/juice_theme.dart';
@@ -28,10 +30,18 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 final ValueNotifier<ThemeMode> themeModeNotifier = ValueNotifier(ThemeMode.light);
+final ValueNotifier<bool> isOnlineNotifier = ValueNotifier(true);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Enable Firestore offline disk persistence — reads served from cache
+  // when offline; writes queued and auto-synced when connectivity returns.
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true,
+    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+  );
 
   // Load saved theme preference
   final prefs = await SharedPreferences.getInstance();
@@ -60,6 +70,14 @@ void main() async {
   messaging.onTokenRefresh.listen((newToken) {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) FirestoreService().updateFcmToken(user.uid, newToken);
+  });
+
+  // Track connectivity for the offline banner
+  final connectivity = Connectivity();
+  final initialResult = await connectivity.checkConnectivity();
+  isOnlineNotifier.value = !initialResult.contains(ConnectivityResult.none);
+  connectivity.onConnectivityChanged.listen((results) {
+    isOnlineNotifier.value = !results.contains(ConnectivityResult.none);
   });
 
   runApp(const JuiceDatesApp());
@@ -156,6 +174,50 @@ class _JuiceDatesAppState extends State<JuiceDatesApp> {
           darkTheme: JuiceTheme.darkTheme,
           themeMode: themeMode,
           debugShowCheckedModeBanner: false,
+          builder: (context, child) {
+            return ValueListenableBuilder<bool>(
+              valueListenable: isOnlineNotifier,
+              builder: (context, online, _) {
+                return Column(
+                  children: [
+                    if (!online)
+                      Material(
+                        color: const Color(0xFF323232),
+                        child: SafeArea(
+                          bottom: false,
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 5),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.signal_wifi_off_rounded,
+                                          color: Colors.white70, size: 14),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        'No internet — showing cached data',
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    Expanded(child: child!),
+                  ],
+                );
+              },
+            );
+          },
           home: const SplashScreen(),
           routes: {
             '/login': (context) => const LoginScreen(),
