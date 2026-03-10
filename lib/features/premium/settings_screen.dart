@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../blocs/auth_bloc.dart';
 import '../../core/network/firestore_service.dart';
 import '../../core/theme/juice_theme.dart';
+import '../../models/user_models.dart';
 import '../../main.dart' show themeModeNotifier;
 
 class SettingsScreen extends StatefulWidget {
@@ -22,6 +23,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _newSparks = true;
   bool _showAge = true;
   int _profileViewCount = 0;
+  JuiceUser? _user;
 
   @override
   void initState() {
