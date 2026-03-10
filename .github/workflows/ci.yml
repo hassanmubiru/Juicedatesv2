@@ -17,7 +17,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x'
+          flutter-version: '3.41.x'
           channel: stable
           cache: true
 
@@ -28,7 +28,7 @@ jobs:
         run: flutter analyze --no-fatal-infos
 
       - name: Test
-        run: flutter test
+        run: flutter test --reporter=expanded
 
   # ─── Build Android APK (debug on PRs, release on main) ───────────────────────
   build-android:
@@ -47,7 +47,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x'
+          flutter-version: '3.41.x'
           channel: stable
           cache: true
 
@@ -106,7 +106,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x'
+          flutter-version: '3.41.x'
           channel: stable
           cache: true
 
