@@ -14,18 +14,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.41.2'
-          channel: stable
-          cache: true
+      - name: Install Flutter 3.41.2
+        run: |
+          curl -fsSL https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.41.2-stable.tar.xz -o /tmp/flutter.tar.xz
+          tar xf /tmp/flutter.tar.xz -C $HOME
+          echo "$HOME/flutter/bin" >> $GITHUB_PATH
 
       - name: Get dependencies
         run: flutter pub get
-
-      - name: Flutter doctor
-        run: flutter doctor -v
 
       - name: Analyze
         run: flutter analyze --no-fatal-infos
@@ -47,12 +43,11 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.41.2'
-          channel: stable
-          cache: true
+      - name: Install Flutter 3.41.2
+        run: |
+          curl -fsSL https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.41.2-stable.tar.xz -o /tmp/flutter.tar.xz
+          tar xf /tmp/flutter.tar.xz -C $HOME
+          echo "$HOME/flutter/bin" >> $GITHUB_PATH
 
       - name: Get dependencies
         run: flutter pub get
@@ -106,12 +101,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.41.2'
-          channel: stable
-          cache: true
+      - name: Install Flutter 3.41.2
+        run: |
+          curl -fsSL https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.41.2-stable.tar.xz -o /tmp/flutter.tar.xz
+          tar xf /tmp/flutter.tar.xz -C $HOME
+          echo "$HOME/flutter/bin" >> $GITHUB_PATH
 
       - name: Get dependencies
         run: flutter pub get
