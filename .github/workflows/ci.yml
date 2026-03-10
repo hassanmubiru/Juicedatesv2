@@ -116,6 +116,11 @@ jobs:
       - name: Build Flutter Web
         run: flutter build web --release --base-href /
 
+      - name: Copy Flutter web build into hosting dir
+        run: |
+          cp -r build/web/* hosting/
+          # Keep admin.html and screenshots — they are already in hosting/
+
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
