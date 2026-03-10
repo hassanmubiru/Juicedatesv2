@@ -101,12 +101,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _inviteFriends() async {
-    await SharePlus.instance.share(
-      ShareParams(
-        text:
-            '❤️ Join me on JuiceDates — a values-first dating app with an 85% reply rate!\n\nDownload it here: https://juicedates.app',
-        subject: 'Join JuiceDates',
-      ),
+    await Share.share(
+      '❤️ Join me on JuiceDates — a values-first dating app with an 85% reply rate!\n\nDownload it here: https://juicedates.app',
+      subject: 'Join JuiceDates',
     );
   }
 
