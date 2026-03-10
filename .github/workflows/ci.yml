@@ -17,12 +17,15 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.41.x'
+          flutter-version: '3.41.2'
           channel: stable
           cache: true
 
       - name: Get dependencies
         run: flutter pub get
+
+      - name: Flutter doctor
+        run: flutter doctor -v
 
       - name: Analyze
         run: flutter analyze --no-fatal-infos
@@ -47,7 +50,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.41.x'
+          flutter-version: '3.41.2'
           channel: stable
           cache: true
 
@@ -106,7 +109,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.41.x'
+          flutter-version: '3.41.2'
           channel: stable
           cache: true
 
