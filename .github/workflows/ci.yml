@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   # - Analyze & Test -
@@ -14,11 +15,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Flutter 3.41.2
-        run: |
-          curl -fsSL https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.41.2-stable.tar.xz -o /tmp/flutter.tar.xz
-          tar xf /tmp/flutter.tar.xz -C $HOME
-          echo "$HOME/flutter/bin" >> $GITHUB_PATH
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.x'
+          channel: stable
+          cache: true
 
       - name: Get dependencies
         run: flutter pub get
@@ -43,11 +45,12 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Flutter 3.41.2
-        run: |
-          curl -fsSL https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.41.2-stable.tar.xz -o /tmp/flutter.tar.xz
-          tar xf /tmp/flutter.tar.xz -C $HOME
-          echo "$HOME/flutter/bin" >> $GITHUB_PATH
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.x'
+          channel: stable
+          cache: true
 
       - name: Get dependencies
         run: flutter pub get
@@ -88,9 +91,7 @@ jobs:
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           groups: beta-testers
           file: build/app/outputs/flutter-apk/app-release.apk
-          releaseNotes: |
-            Auto-build from commit ${{ github.sha }}
-            ${{ github.event.commits[0].message }}
+          releaseNotes: "Auto-build from ${{ github.sha }}"
 
   # - Build & Deploy Flutter Web -
   deploy-web:
@@ -101,11 +102,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Flutter 3.41.2
-        run: |
-          curl -fsSL https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.41.2-stable.tar.xz -o /tmp/flutter.tar.xz
-          tar xf /tmp/flutter.tar.xz -C $HOME
-          echo "$HOME/flutter/bin" >> $GITHUB_PATH
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.x'
+          channel: stable
+          cache: true
 
       - name: Get dependencies
         run: flutter pub get
