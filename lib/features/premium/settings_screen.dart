@@ -333,3 +333,122 @@ class _SectionHeader extends StatelessWidget {
     );
   }
 }
+
+/// Profile completion strength card — shown at the top of the settings/profile tab.
+class _ProfileStrengthCard extends StatelessWidget {
+  final JuiceUser user;
+  const _ProfileStrengthCard({required this.user});
+
+  /// Returns a 0–100 strength score and a list of missing field hints.
+  static ({int score, List<String> missing}) _compute(JuiceUser u) {
+    final checks = <(bool, String)>[
+      (u.photos.isNotEmpty, 'Add a profile photo'),
+      (u.photos.length >= 3, 'Add 3+ photos'),
+      (u.bio != null && u.bio!.trim().length > 20, 'Write a bio'),
+      (u.interests.length >= 3, 'Add 3+ interests'),
+      (u.university != null && u.university!.isNotEmpty, 'Add your university'),
+      (u.jobTitle != null && u.jobTitle!.isNotEmpty, 'Add your job title'),
+      (u.sexualOrientation != null, 'Set sexual orientation'),
+      (u.bio != null && u.bio!.trim().isNotEmpty, 'Write something in your bio'),
+      (u.juiceProfile.family > 0, 'Complete the Juice Quiz'),
+      (u.city != 'Unknown' && u.city.isNotEmpty, 'Set your city'),
+    ];
+    final total = checks.length;
+    final done = checks.where((c) => c.$1).length;
+    final missing = checks
+        .where((c) => !c.$1)
+        .map((c) => c.$2)
+        .toList();
+    return (score: (done * 100 ~/ total), missing: missing.take(3).toList());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final result = _compute(user);
+    final score = result.score;
+    final missing = result.missing;
+    final color = score >= 80
+        ? JuiceTheme.juiceGreen
+        : score >= 50
+            ? JuiceTheme.primaryTangerine
+            : Colors.red.shade400;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 2,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.bar_chart_rounded,
+                      color: JuiceTheme.primaryTangerine),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text('Profile Strength',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 15)),
+                  ),
+                  Text('$score%',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: color,
+                          fontSize: 16)),
+                ],
+              ),
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: score / 100.0,
+                  minHeight: 8,
+                  backgroundColor: Colors.grey.shade200,
+                  valueColor: AlwaysStoppedAnimation<Color>(color),
+                ),
+              ),
+              if (missing.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                ...missing.map((hint) => Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Row(
+                        children: [
+                          Icon(Icons.add_circle_outline_rounded,
+                              size: 14, color: Colors.grey.shade500),
+                          const SizedBox(width: 6),
+                          Text(hint,
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600)),
+                        ],
+                      ),
+                    )),
+                const SizedBox(height: 10),
+                GestureDetector(
+                  onTap: () =>
+                      Navigator.pushNamed(context, '/edit-profile'),
+                  child: Text(
+                    'Complete your profile →',
+                    style: TextStyle(
+                        color: JuiceTheme.primaryTangerine,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13),
+                  ),
+                ),
+              ] else ...[
+                const SizedBox(height: 8),
+                const Text('Your profile is complete! 🎉',
+                    style: TextStyle(
+                        color: JuiceTheme.juiceGreen,
+                        fontWeight: FontWeight.w600)),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
