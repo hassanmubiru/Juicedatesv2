@@ -93,12 +93,43 @@ class JuiceDatesApp extends StatefulWidget {
   State<JuiceDatesApp> createState() => _JuiceDatesAppState();
 }
 
-class _JuiceDatesAppState extends State<JuiceDatesApp> {
+class _JuiceDatesAppState extends State<JuiceDatesApp>
+    with WidgetsBindingObserver {
+  final _presenceService = FirestoreService();
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _setupForegroundMessages();
     _setupNotificationTap();
+    // Mark online when app starts
+    _setPresence(true);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _setPresence(false);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _setPresence(true);
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached ||
+        state == AppLifecycleState.inactive) {
+      _setPresence(false);
+    }
+  }
+
+  void _setPresence(bool online) {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      _presenceService.updatePresence(uid, online: online);
+    }
   }
 
   /// Show an in-app banner when a push arrives while the app is open.
