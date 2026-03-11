@@ -78,7 +78,11 @@ class ChatListScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  leading: Stack(
+                  leading: StreamBuilder<JuiceUser>(
+                stream: service.getUser(partnerUid ?? ''),
+                builder: (context, userSnap) {
+                  final isOnline = userSnap.data?.isOnline ?? false;
+                  return Stack(
                     children: [
                       CircleAvatar(
                         radius: 28,
@@ -92,22 +96,25 @@ class ChatListScreen extends StatelessWidget {
                                 color: Colors.white, size: 30)
                             : null,
                       ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          width: 14,
-                          height: 14,
-                          decoration: BoxDecoration(
-                            color: JuiceTheme.juiceGreen,
-                            shape: BoxShape.circle,
-                            border:
-                                Border.all(color: Colors.white, width: 2),
+                      if (isOnline)
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            width: 14,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: JuiceTheme.juiceGreen,
+                              shape: BoxShape.circle,
+                              border:
+                                  Border.all(color: Colors.white, width: 2),
+                            ),
                           ),
                         ),
-                      ),
                     ],
-                  ),
+                  );
+                },
+              ),
                   title: Row(
                     children: [
                       Text(partnerName,
