@@ -60,7 +60,7 @@ void main() async {
     iOS: DarwinInitializationSettings(),
   );
   await _localNotif.initialize(
-    initSettings,
+    settings: initSettings,
     onDidReceiveNotificationResponse: (details) {
       Future.microtask(() => navigatorKey.currentState
           ?.pushNamedAndRemoveUntil('/home', (_) => false));
@@ -175,10 +175,10 @@ class _JuiceDatesAppState extends State<JuiceDatesApp>
       final title = notification.title ?? 'JuiceDates';
       final body = notification.body ?? '';
       _localNotif.show(
-        notification.hashCode,
-        title,
-        body,
-        NotificationDetails(
+        id: notification.hashCode,
+        title: title,
+        body: body,
+        notificationDetails: NotificationDetails(
           android: AndroidNotificationDetails(
             _messageChannelId,
             _messageChannelName,
