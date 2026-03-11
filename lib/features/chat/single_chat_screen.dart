@@ -744,6 +744,103 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
   }
 }
 
+// ── Animated "typing" bubble ───────────────────────────────────────────────
+class _TypingBubble extends StatefulWidget {
+  final String name;
+  const _TypingBubble({required this.name});
+
+  @override
+  State<_TypingBubble> createState() => _TypingBubbleState();
+}
+
+class _TypingBubbleState extends State<_TypingBubble>
+    with TickerProviderStateMixin {
+  late final List<AnimationController> _dots;
+  late final List<Animation<double>> _anims;
+
+  @override
+  void initState() {
+    super.initState();
+    _dots = List.generate(
+      3,
+      (i) => AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 400),
+      ),
+    );
+    _anims = _dots
+        .map((c) => Tween<double>(begin: 0, end: -6).animate(
+              CurvedAnimation(parent: c, curve: Curves.easeInOut),
+            ))
+        .toList();
+    _startLoop();
+  }
+
+  void _startLoop() async {
+    while (mounted) {
+      for (int i = 0; i < _dots.length; i++) {
+        if (!mounted) return;
+        await Future.delayed(Duration(milliseconds: 150 * i));
+        if (!mounted) return;
+        _dots[i].forward().then((_) => _dots[i].reverse());
+      }
+      await Future.delayed(const Duration(milliseconds: 800));
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final c in _dots) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(18),
+          topRight: Radius.circular(18),
+          bottomRight: Radius.circular(18),
+          bottomLeft: Radius.circular(4),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('${widget.name} is typing',
+              style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[500],
+                  fontStyle: FontStyle.italic)),
+          const SizedBox(width: 8),
+          ...List.generate(3, (i) {
+            return AnimatedBuilder(
+              animation: _anims[i],
+              builder: (_, __) => Transform.translate(
+                offset: Offset(0, _anims[i].value),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[400],
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
 class _ReportDialog extends StatefulWidget {
   final String name;
   const _ReportDialog({required this.name});

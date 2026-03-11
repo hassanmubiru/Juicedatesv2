@@ -507,6 +507,29 @@ class FirestoreService {
     }
   }
 
+  // ── Typing indicators ─────────────────────────────────────────────────────
+
+  /// Sets or clears the typing flag for [uid] inside the match document.
+  Future<void> setTyping(String matchId, String uid, bool isTyping) async {
+    try {
+      await _db.collection('matches').doc(matchId).update({
+        'typing.$uid': isTyping,
+      });
+    } catch (_) {
+      // Match doc may not exist yet — ignore silently
+    }
+  }
+
+  /// Streams whether [partnerUid] is currently typing in [matchId].
+  Stream<bool> streamPartnerTyping(String matchId, String partnerUid) {
+    return _db.collection('matches').doc(matchId).snapshots().map((doc) {
+      final data = doc.data();
+      if (data == null) return false;
+      final typing = data['typing'] as Map<String, dynamic>?;
+      return typing?[partnerUid] == true;
+    });
+  }
+
   // ── Events ────────────────────────────────────────────────────────────────
 
   Stream<List<JuiceEvent>> getEvents() {
