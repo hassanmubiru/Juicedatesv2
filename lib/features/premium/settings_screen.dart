@@ -157,6 +157,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Future<void> _showVerificationFlow() async {
+    final verificationStatus = _user?.verificationStatus;
+    if (verificationStatus == 'verified') {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Your profile is already verified ✅')),
+      );
+      return;
+    }
+    if (verificationStatus == 'pending') {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content:
+                Text('Your verification request is under review. Check back soon!')),
+      );
+      return;
+    }
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => _VerificationSheet(
+        user: _user!,
+        onSubmitted: () {
+          if (mounted) {
+            setState(() {
+              // Reflect pending state locally without full reload
+              _user = JuiceUser(
+                uid: _user!.uid,
+                displayName: _user!.displayName,
+                photoUrl: _user!.photoUrl,
+                photoUrls: _user!.photoUrls,
+                bio: _user!.bio,
+                age: _user!.age,
+                city: _user!.city,
+                interests: _user!.interests,
+                gender: _user!.gender,
+                lookingFor: _user!.lookingFor,
+                latitude: _user!.latitude,
+                longitude: _user!.longitude,
+                isPremium: _user!.isPremium,
+                showAge: _user!.showAge,
+                verificationStatus: 'pending',
+              );
+            });
+          }
+        },
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -176,9 +230,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             leading: const Icon(Icons.verified_user_outlined),
             title: const Text('Juice Verification'),
-            subtitle: const Text('Get a verified badge'),
+            subtitle: Text(
+              _user?.verificationStatus == 'verified'
+                  ? 'Verified ✅'
+                  : _user?.verificationStatus == 'pending'
+                      ? 'Under review…'
+                      : 'Get a verified badge',
+            ),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => _showComingSoon('Juice Verification'),
+            onTap: _user == null ? null : _showVerificationFlow,
           ),
           // Profile views
           ListTile(
