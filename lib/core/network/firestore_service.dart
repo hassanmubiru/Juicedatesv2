@@ -617,27 +617,21 @@ class FirestoreService {
 
   // ── Winks ─────────────────────────────────────────────────────────
 
-  /// Sends a wink. Deduped per sender/receiver per day.
+  /// Sends a wink. Deterministic doc ID per sender/receiver pair prevents duplicates.
   Future<void> winkUser(
       String fromUid, String fromName, String? fromPhoto, String toUid) async {
     if (fromUid == toUid) return;
-    final today = _todayString();
-    final existing = await _db
-        .collection('winks')
-        .where('fromUid', isEqualTo: fromUid)
-        .where('toUid', isEqualTo: toUid)
-        .where('date', isEqualTo: today)
-        .get();
-    if (existing.docs.isNotEmpty) return; // already winked today
-    await _db.collection('winks').add({
+    // Deterministic ID: one wink doc per (from, to) pair — ever
+    final docId = '${fromUid}_$toUid';
+    await _db.collection('winks').doc(docId).set({
       'fromUid': fromUid,
       'toUid': toUid,
       'fromName': fromName,
       'fromPhoto': fromPhoto,
-      'date': today,
+      'date': _todayString(),
       'createdAt': FieldValue.serverTimestamp(),
       'seen': false,
-    });
+    }, SetOptions(merge: false));
   }
 
   Stream<List<JuiceWink>> getWinksReceived(String uid) {
@@ -647,8 +641,16 @@ class FirestoreService {
         .orderBy('createdAt', descending: true)
         .limit(30)
         .snapshots()
-        .map((snap) =>
-            snap.docs.map((d) => JuiceWink.fromFirestore(d)).toList());
+        .map((snap) {
+      // Deduplicate by fromUid — keep most recent wink per sender
+      final seen = <String>{};
+      final result = <JuiceWink>[];
+      for (final d in snap.docs) {
+        final wink = JuiceWink.fromFirestore(d);
+        if (seen.add(wink.fromUid)) result.add(wink);
+      }
+      return result;
+    });
   }
 
   Future<void> markWinkSeen(String winkId) async {
