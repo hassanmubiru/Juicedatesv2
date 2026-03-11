@@ -27,7 +27,7 @@ Future<void> showBlockReportSheet(BuildContext context, JuiceUser target) async 
                   color: Colors.grey.shade300,
                   borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 16),
-          Text('${target.displayName}',
+          Text(target.displayName,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 8),
           ListTile(

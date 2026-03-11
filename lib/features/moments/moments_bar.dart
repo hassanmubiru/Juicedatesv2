@@ -263,6 +263,10 @@ class _MomentViewerState extends State<MomentViewer>
     }
   }
 
+  @override
+  Widget build(BuildContext context) {
+    final moment = widget.moments[_index];
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: GestureDetector(
