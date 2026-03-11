@@ -360,7 +360,7 @@ class _MomentViewerState extends State<MomentViewer>
 
             // Moment text — bottom
             Positioned(
-              bottom: 60,
+              bottom: 70,
               left: 24,
               right: 24,
               child: Text(
@@ -374,6 +374,72 @@ class _MomentViewerState extends State<MomentViewer>
                 textAlign: TextAlign.center,
               ),
             ),
+
+            // Reply bar — only for others' moments
+            if (moment.uid != _myUid)
+              Positioned(
+                bottom: 12,
+                left: 16,
+                right: 16,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _replyFocused = true),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(color: Colors.white38),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 10),
+                          child: _replyFocused
+                              ? TextField(
+                                  controller: _replyCtrl,
+                                  autofocus: true,
+                                  style: const TextStyle(
+                                      color: Colors.white, fontSize: 14),
+                                  decoration: const InputDecoration(
+                                    hintText: 'Send a reply…',
+                                    hintStyle:
+                                        TextStyle(color: Colors.white60),
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                  ),
+                                  onSubmitted: (_) => _sendReply(),
+                                )
+                              : const Text('Reply to this moment…',
+                                  style: TextStyle(
+                                      color: Colors.white60, fontSize: 14)),
+                        ),
+                      ),
+                    ),
+                    if (_replyFocused) ...[
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: _sendingReply ? null : _sendReply,
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: const BoxDecoration(
+                            color: JuiceTheme.primaryTangerine,
+                            shape: BoxShape.circle,
+                          ),
+                          child: _sendingReply
+                              ? const Padding(
+                                  padding: EdgeInsets.all(10),
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2, color: Colors.white))
+                              : const Icon(Icons.send_rounded,
+                                  color: Colors.white, size: 18),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
           ],
         ),
       ),
@@ -402,6 +468,9 @@ class _PostMomentSheetState extends State<_PostMomentSheet> {
   final _ctrl = TextEditingController();
   bool _posting = false;
   String? _emoji;
+  File? _imageFile;
+  final _picker = ImagePicker();
+  final _cloudinary = CloudinaryService();
 
   static const _quickEmojis = [
     '🌟', '❤️', '🔥', '✨', '🍊', '😊', '💬', '🎉', '💪', '🌈'
@@ -413,14 +482,42 @@ class _PostMomentSheetState extends State<_PostMomentSheet> {
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    final picked =
+        await _picker.pickImage(source: ImageSource.gallery, imageQuality: 75);
+    if (picked != null) setState(() => _imageFile = File(picked.path));
+  }
+
   Future<void> _post() async {
     final body =
         ((_emoji != null ? '$_emoji ' : '') + _ctrl.text).trim();
-    if (body.isEmpty) return;
+    if (body.isEmpty && _imageFile == null) return;
     setState(() => _posting = true);
-    await widget.service.postMoment(
-        widget.user.uid, widget.user.displayName, widget.user.photoUrl, body);
-    if (mounted) Navigator.pop(context);
+    try {
+      String? uploadedUrl;
+      if (_imageFile != null) {
+        uploadedUrl = await _cloudinary.uploadPhoto(
+          file: _imageFile!,
+          publicId:
+              'moment_${widget.user.uid}_${DateTime.now().millisecondsSinceEpoch}',
+        );
+      }
+      await widget.service.postMoment(
+        widget.user.uid,
+        widget.user.displayName,
+        widget.user.photoUrl,
+        body.isNotEmpty ? body : '📷',
+        imageUrl: uploadedUrl,
+      );
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to post: $e')),
+        );
+        setState(() => _posting = false);
+      }
+    }
   }
 
   @override
