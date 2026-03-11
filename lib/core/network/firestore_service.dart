@@ -724,6 +724,22 @@ class FirestoreService {
     // here we just delete the user document itself.
     await _db.collection('users').doc(uid).delete();
   }
+
+  Future<void> submitVerificationRequest({
+    required String uid,
+    required String displayName,
+    required String selfieUrl,
+  }) async {
+    await _db.collection('verificationRequests').add({
+      'uid': uid,
+      'displayName': displayName,
+      'selfieUrl': selfieUrl,
+      'status': 'pending',
+      'submittedAt': FieldValue.serverTimestamp(),
+    });
+    // Mark user as verification-pending so the badge can show as pending
+    await _db.collection('users').doc(uid).update({'verificationStatus': 'pending'});
+  }
 }
 
 /// Thrown when a free user has exhausted their daily like quota.
