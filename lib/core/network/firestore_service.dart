@@ -514,6 +514,24 @@ class FirestoreService {
     await _db.collection('events').add(data);
   }
 
+  Future<void> replyToMoment({
+    required String momentId,
+    required String replierUid,
+    required String replierName,
+    required String text,
+  }) async {
+    await _db
+        .collection('moments')
+        .doc(momentId)
+        .collection('replies')
+        .add({
+      'uid': replierUid,
+      'name': replierName,
+      'text': text,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   // ── Moments (24-hour stories) ────────────────────────────────────────────
 
   Future<void> requestPremium(String uid) async {
