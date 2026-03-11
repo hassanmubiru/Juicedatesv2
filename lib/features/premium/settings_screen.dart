@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,6 +12,7 @@ import '../../core/network/firestore_service.dart';
 import '../../core/theme/juice_theme.dart';
 import '../../models/user_models.dart';
 import '../../main.dart' show themeModeNotifier;
+import '../home/user_profile_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -141,21 +143,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  void _showComingSoon(String feature) {
-    showDialog(
+  Future<void> _showProfileViewers() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    await showModalBottomSheet(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text(feature),
-        content: const Text('This feature is coming soon! Stay tuned for updates.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => _ProfileViewersSheet(
+        uid: uid,
+        isPremium: _isPremium,
       ),
     );
   }
+
 
   Future<void> _showVerificationFlow() async {
     final verificationStatus = _user?.verificationStatus;
@@ -238,7 +240,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   : '$_profileViewCount ${_profileViewCount == 1 ? 'person' : 'people'} viewed your profile this week',
             ),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => _showComingSoon('Detailed Viewers'),
+            onTap: () => _showProfileViewers(),
           ),
           const _SectionHeader(title: 'Premium'),
           ListTile(
@@ -635,3 +637,259 @@ class _VerificationSheetState extends State<_VerificationSheet> {
     );
   }
 }
+
+// ── Profile Viewers bottom sheet ───────────────────────────────────────────
+
+class _ProfileViewersSheet extends StatefulWidget {
+  final String uid;
+  final bool isPremium;
+  const _ProfileViewersSheet({required this.uid, required this.isPremium});
+
+  @override
+  State<_ProfileViewersSheet> createState() => _ProfileViewersSheetState();
+}
+
+class _ProfileViewersSheetState extends State<_ProfileViewersSheet> {
+  final _service = FirestoreService();
+  List<JuiceUser>? _viewers;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final viewers = await _service.getProfileViewers(widget.uid);
+    if (mounted) setState(() { _viewers = viewers; _loading = false; });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.6,
+      maxChildSize: 0.92,
+      builder: (_, scrollCtrl) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+                child: Row(
+                  children: [
+                    const Icon(Icons.visibility_rounded, color: Colors.blue),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'Profile Views',
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: _loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : (_viewers == null || _viewers!.isEmpty)
+                        ? _buildEmpty()
+                        : widget.isPremium
+                            ? _buildList(scrollCtrl)
+                            : _buildBlurred(scrollCtrl),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEmpty() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text('👀', style: TextStyle(fontSize: 56)),
+          SizedBox(height: 16),
+          Text('No views yet this week',
+              style:
+                  TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          SizedBox(height: 8),
+          Text(
+            'When someone views your profile,\nthey\'ll appear here.',
+            style: TextStyle(color: Colors.grey),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildList(ScrollController ctrl) {
+    return ListView.separated(
+      controller: ctrl,
+      padding: const EdgeInsets.all(16),
+      itemCount: _viewers!.length,
+      separatorBuilder: (_, __) => const Divider(height: 1),
+      itemBuilder: (context, i) {
+        final user = _viewers![i];
+        final photo = user.photos.isNotEmpty
+            ? user.photos.first
+            : (user.photoUrl ?? '');
+        return ListTile(
+          leading: CircleAvatar(
+            radius: 26,
+            backgroundColor: JuiceTheme.secondaryCitrus,
+            backgroundImage:
+                photo.isNotEmpty ? NetworkImage(photo) : null,
+            child: photo.isEmpty
+                ? const Icon(Icons.person, color: Colors.white)
+                : null,
+          ),
+          title: Text(
+            user.showAge
+                ? '${user.displayName}, ${user.age}'
+                : user.displayName,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          subtitle: Text(user.city,
+              style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () {
+            Navigator.pop(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => UserProfileScreen(user: user),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildBlurred(ScrollController ctrl) {
+    return Stack(
+      children: [
+        IgnorePointer(
+          child: GridView.builder(
+            controller: ctrl,
+            padding: const EdgeInsets.all(12),
+            gridDelegate:
+                const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 0.88,
+            ),
+            itemCount: _viewers!.length,
+            itemBuilder: (_, i) {
+              final user = _viewers![i];
+              final url = user.photos.isNotEmpty
+                  ? user.photos.first
+                  : (user.photoUrl ?? '');
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: ImageFiltered(
+                  imageFilter:
+                      ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                  child: url.isNotEmpty
+                      ? Image.network(url,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                              color: JuiceTheme.primaryTangerine
+                                  .withValues(alpha: 0.4)))
+                      : Container(
+                          decoration: BoxDecoration(
+                              gradient: JuiceTheme.primaryGradient)),
+                ),
+              );
+            },
+          ),
+        ),
+        // Upgrade CTA overlay
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Theme.of(context)
+                      .colorScheme
+                      .surface
+                      .withValues(alpha: 0.95),
+                ],
+                stops: const [0.3, 0.7],
+              ),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text(
+                  '${_viewers!.length} ${_viewers!.length == 1 ? 'person' : 'people'} viewed your profile',
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Upgrade to Juice Plus+ to see who they are',
+                  style: TextStyle(color: Colors.grey),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: JuiceTheme.primaryTangerine,
+                      minimumSize: const Size.fromHeight(48),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30)),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/premium-paywall');
+                    },
+                    child: const Text(
+                      'Unlock Viewers — Juice Plus+',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+
