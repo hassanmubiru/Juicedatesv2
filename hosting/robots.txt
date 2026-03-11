@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://juicedates-2ebf0.web.app/sitemap.xml
