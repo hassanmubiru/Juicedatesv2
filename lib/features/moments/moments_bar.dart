@@ -236,12 +236,32 @@ class _MomentViewerState extends State<MomentViewer>
   @override
   void dispose() {
     _ctrl.dispose();
+    _replyCtrl.dispose();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final moment = widget.moments[_index];
+  Future<void> _sendReply() async {
+    final text = _replyCtrl.text.trim();
+    if (text.isEmpty || _myUid == null) return;
+    setState(() => _sendingReply = true);
+    try {
+      await _service.replyToMoment(
+        momentId: widget.moments[_index].id,
+        replierUid: _myUid!,
+        replierName: _myName,
+        text: text,
+      );
+      _replyCtrl.clear();
+      if (mounted) {
+        setState(() => _replyFocused = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Reply sent! 💬')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sendingReply = false);
+    }
+  }
 
     return Scaffold(
       backgroundColor: Colors.black,
