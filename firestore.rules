@@ -48,10 +48,11 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // Events: all signed-in users can read and RSVP; only admins can create/delete/fully update
+    // Events: all signed-in users can read and RSVP; signed-in users can create; only admins can delete/fully update
     match /events/{eventId} {
       allow read: if isSignedIn();
-      allow create, delete: if isAdmin();
+      allow create: if isSignedIn();
+      allow delete: if isAdmin();
       allow update: if isAdmin() ||
         (isSignedIn() &&
           request.resource.data.diff(resource.data).affectedKeys()
@@ -103,6 +104,13 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
       allow delete: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
       allow update: if false;
+
+      // Replies to moments
+      match /replies/{replyId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+        allow update, delete: if false;
+      }
     }
 
     // Winks — admin can list all; participants can read their own
@@ -120,6 +128,12 @@ service cloud.firestore {
     // Admin broadcast notifications
     match /adminNotifications/{id} {
       allow read, write: if isAdmin();
+    }
+
+    // Verification requests
+    match /verificationRequests/{reqId} {
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow read, update, delete: if isAdmin();
     }
   }
 }
