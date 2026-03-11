@@ -177,12 +177,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (uid == null) return;
     setState(() => _saving = true);
     try {
-      // Upload any new photos
-      final updatedUrls = <String>[];
+      // Upload new photos in parallel, then merge with existing URLs
+      final uploadFutures = <int, Future<String>>{};
       for (int i = 0; i < 6; i++) {
         if (_newPhotos[i] != null) {
-          final url = await _service.uploadPhoto(uid, _newPhotos[i]!, i);
-          updatedUrls.add(url);
+          uploadFutures[i] = _service.uploadPhoto(uid, _newPhotos[i]!, i);
+        }
+      }
+      final uploadResults = await Future.wait(uploadFutures.values);
+      final uploadedByIndex = Map.fromIterables(uploadFutures.keys, uploadResults);
+
+      final updatedUrls = <String>[];
+      for (int i = 0; i < 6; i++) {
+        if (uploadedByIndex.containsKey(i)) {
+          updatedUrls.add(uploadedByIndex[i]!);
         } else if (_photoUrls[i] != null) {
           updatedUrls.add(_photoUrls[i]!);
         }
