@@ -6,6 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'firebase_options.dart';
 import 'core/theme/juice_theme.dart';
 import 'core/network/firestore_service.dart';
@@ -33,9 +34,43 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 final ValueNotifier<ThemeMode> themeModeNotifier = ValueNotifier(ThemeMode.light);
 final ValueNotifier<bool> isOnlineNotifier = ValueNotifier(true);
 
+// ── Local notifications (WhatsApp-style heads-up) ──────────────────────────
+final FlutterLocalNotificationsPlugin _localNotif =
+    FlutterLocalNotificationsPlugin();
+
+const _messageChannelId = 'juicedates_messages';
+const _messageChannelName = 'Messages';
+const _androidChannel = AndroidNotificationChannel(
+  _messageChannelId,
+  _messageChannelName,
+  description: 'New message notifications',
+  importance: Importance.high,
+  playSound: true,
+  enableVibration: true,
+  showBadge: true,
+);
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // ── Local notifications init ──────────────────────────────────────────────
+  const initSettings = InitializationSettings(
+    android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+    iOS: DarwinInitializationSettings(),
+  );
+  await _localNotif.initialize(
+    initSettings,
+    onDidReceiveNotificationResponse: (details) {
+      Future.microtask(() => navigatorKey.currentState
+          ?.pushNamedAndRemoveUntil('/home', (_) => false));
+    },
+  );
+  // Create the high-importance channel on Android
+  await _localNotif
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(_androidChannel);
 
   // Enable Firestore offline disk persistence — reads served from cache
   // when offline; writes queued and auto-synced when connectivity returns.
@@ -132,32 +167,37 @@ class _JuiceDatesAppState extends State<JuiceDatesApp>
     }
   }
 
-  /// Show an in-app banner when a push arrives while the app is open.
+  /// Show an in-app heads-up notification when a push arrives while the app is open.
   void _setupForegroundMessages() {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       final notification = message.notification;
       if (notification == null) return;
-      final ctx = navigatorKey.currentContext;
-      if (ctx == null || !ctx.mounted) return;
-      ScaffoldMessenger.of(ctx).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 4),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(notification.title ?? '',
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
-              if (notification.body != null) Text(notification.body!),
-            ],
+      final title = notification.title ?? 'JuiceDates';
+      final body = notification.body ?? '';
+      _localNotif.show(
+        notification.hashCode,
+        title,
+        body,
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            _messageChannelId,
+            _messageChannelName,
+            channelDescription: 'New message notifications',
+            importance: Importance.high,
+            priority: Priority.high,
+            ticker: body,
+            // Peek / heads-up behaviour
+            fullScreenIntent: false,
+            styleInformation: BigTextStyleInformation(body),
+            icon: '@mipmap/ic_launcher',
           ),
-          action: SnackBarAction(
-            label: 'View',
-            onPressed: () =>
-                _handleNotificationData(message.data),
+          iOS: const DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
           ),
         ),
+        payload: message.data['type'],
       );
     });
   }

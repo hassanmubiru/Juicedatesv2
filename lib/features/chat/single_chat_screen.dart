@@ -570,9 +570,9 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
         // ── Input row ───────────────────────────────────────────────
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
           ),
           child: Row(
             children: [
@@ -603,11 +603,17 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
                 child: TextField(
                   controller: _controller,
                   focusNode: _textFocusNode,
-                  decoration: const InputDecoration(
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  decoration: InputDecoration(
                     hintText: 'Type a message...',
+                    hintStyle: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
                     border: InputBorder.none,
                     isDense: true,
-                    contentPadding: EdgeInsets.symmetric(vertical: 8),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
                   ),
                   onSubmitted: (_) => _sendMessage(),
                 ),
@@ -629,7 +635,7 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
     final emojis = cats[_emojiCategoryIndex].$2;
     return Container(
       height: 260,
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       child: Column(
         children: [
           // Category tab strip

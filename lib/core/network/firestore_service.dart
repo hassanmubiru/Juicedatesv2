@@ -97,8 +97,12 @@ class FirestoreService {
               u.isBanned != true &&
               !u.isAdmin)
           .toList();
-      // Sort best matches first using the Sparks algorithm
+      // Boosted users always float to the top; within each group sort by Sparks
+      final now = DateTime.now();
       users.sort((a, b) {
+        final aBoost = a.boostExpiresAt != null && a.boostExpiresAt!.isAfter(now);
+        final bBoost = b.boostExpiresAt != null && b.boostExpiresAt!.isAfter(now);
+        if (aBoost != bBoost) return aBoost ? -1 : 1;
         final sA = JuiceEngine.computeSparks(
             currentUser.juiceProfile, a.juiceProfile);
         final sB = JuiceEngine.computeSparks(
