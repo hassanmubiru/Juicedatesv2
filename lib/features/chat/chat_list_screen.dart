@@ -79,7 +79,7 @@ class ChatListScreen extends StatelessWidget {
                     ),
                   ),
                   leading: StreamBuilder<JuiceUser>(
-                stream: service.getUser(partnerUid ?? ''),
+                stream: service.getUser(partnerUid),
                 builder: (context, userSnap) {
                   final isOnline = userSnap.data?.isOnline ?? false;
                   return Stack(
