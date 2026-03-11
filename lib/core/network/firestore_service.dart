@@ -370,7 +370,11 @@ class FirestoreService {
 
   Future<JuiceMatch> _createMatch(
       JuiceUser user1, JuiceUser user2, double sparksScore) async {
-    final ref = _db.collection('matches').doc();
+    // Deterministic ID — sorted UIDs joined — guarantees only one match
+    // document can ever exist for any given pair, even under race conditions.
+    final ids = [user1.uid, user2.uid]..sort();
+    final ref = _db.collection('matches').doc('${ids[0]}_${ids[1]}');
+    // Use set with merge so re-creating an existing match is a no-op
     await ref.set({
       'users': [user1.uid, user2.uid],
       'userNames': {user1.uid: user1.displayName, user2.uid: user2.displayName},
@@ -382,7 +386,7 @@ class FirestoreService {
       'lastMessageTime': FieldValue.serverTimestamp(),
       'createdAt': FieldValue.serverTimestamp(),
       'readByUids': [],
-    });
+    }, SetOptions(merge: false));
     final doc = await ref.get();
     final match = JuiceMatch.fromFirestore(doc);
     // Push notifications (fire-and-forget)
@@ -399,10 +403,19 @@ class FirestoreService {
         .collection('matches')
         .where('users', arrayContains: uid)
         .orderBy('lastMessageTime', descending: true)
-        .limit(50) // cap at 50 — nobody has more active convos
+        .limit(50)
         .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => JuiceMatch.fromFirestore(doc)).toList());
+        .map((snapshot) {
+      final seen = <String>{};
+      final matches = <JuiceMatch>[];
+      for (final doc in snapshot.docs) {
+        final match = JuiceMatch.fromFirestore(doc);
+        final partnerUid = match.getPartnerUid(uid);
+        // Keep only the first (most recent) match per partner
+        if (seen.add(partnerUid)) matches.add(match);
+      }
+      return matches;
+    });
   }
 
   Future<JuiceMatch?> getMatchOnce(String matchId) async {
