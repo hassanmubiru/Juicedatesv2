@@ -545,6 +545,46 @@ class _PostMomentSheetState extends State<_PostMomentSheet> {
             const Text('Visible to everyone for 24 hours',
                 style: TextStyle(color: Colors.grey, fontSize: 12)),
             const SizedBox(height: 14),
+            // Image picker row
+            Row(
+              children: [
+                GestureDetector(
+                  onTap: _pickImage,
+                  child: Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: _imageFile != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(11),
+                            child: Image.file(_imageFile!, fit: BoxFit.cover))
+                        : const Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add_photo_alternate_outlined,
+                                  color: Colors.grey),
+                              Text('Photo',
+                                  style: TextStyle(
+                                      fontSize: 10, color: Colors.grey)),
+                            ],
+                          ),
+                  ),
+                ),
+                if (_imageFile != null) ...[
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => setState(() => _imageFile = null),
+                    child: const Icon(Icons.close_rounded,
+                        color: Colors.grey, size: 20),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 12),
             // Emoji quick-picks
             SizedBox(
               height: 44,
