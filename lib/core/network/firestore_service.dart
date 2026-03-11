@@ -508,6 +508,12 @@ class FirestoreService {
     });
   }
 
+  Future<void> createEvent(JuiceEvent event) async {
+    final data = event.toJson();
+    data['createdAt'] = FieldValue.serverTimestamp();
+    await _db.collection('events').add(data);
+  }
+
   // ── Moments (24-hour stories) ────────────────────────────────────────────
 
   Future<void> requestPremium(String uid) async {

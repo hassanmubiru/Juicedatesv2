@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/network/firestore_service.dart';
 import '../../core/theme/juice_theme.dart';
 import '../../models/user_models.dart';
@@ -37,6 +38,13 @@ class JuiceTribesScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Juice Tribes')),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showCreateEventSheet(context, service),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Create Event'),
+        backgroundColor: JuiceTheme.primaryTangerine,
+        foregroundColor: Colors.white,
+      ),
       body: StreamBuilder<List<JuiceEvent>>(
         stream: service.getEvents(),
         builder: (context, snapshot) {
@@ -50,6 +58,154 @@ class JuiceTribesScreen extends StatelessWidget {
       ),
     );
   }
+
+  void _showCreateEventSheet(BuildContext context, FirestoreService service) {
+    final titleCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final dateCtrl = TextEditingController();
+    final locationCtrl = TextEditingController(text: 'Kampala, Uganda');
+    String category = 'Lifestyle';
+    bool saving = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => Padding(
+          padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              left: 20, right: 20, top: 20),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text('Create a Tribe Event',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: titleCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Event title',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: category,
+                  decoration: InputDecoration(
+                    labelText: 'Category',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  items: ['Family', 'Career', 'Lifestyle', 'Ethics', 'Fun']
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                      .toList(),
+                  onChanged: (v) => setS(() => category = v ?? category),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: dateCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Date (e.g. Apr 20, 2026)',
+                    prefixIcon: const Icon(Icons.calendar_today_rounded),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: ctx,
+                      initialDate: DateTime.now().add(const Duration(days: 7)),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 365)),
+                    );
+                    if (picked != null) {
+                      dateCtrl.text =
+                          '${_monthName(picked.month)} ${picked.day}, ${picked.year}';
+                    }
+                  },
+                  readOnly: true,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: locationCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Location',
+                    prefixIcon: const Icon(Icons.location_on_rounded),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: descCtrl,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    labelText: 'Description',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: JuiceTheme.primaryTangerine,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: saving
+                      ? null
+                      : () async {
+                          if (titleCtrl.text.trim().isEmpty ||
+                              dateCtrl.text.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text('Please fill in title and date')));
+                            return;
+                          }
+                          setS(() => saving = true);
+                          final uid =
+                              FirebaseAuth.instance.currentUser?.uid ?? '';
+                          final event = JuiceEvent(
+                            id: '',
+                            title: titleCtrl.text.trim(),
+                            category: category,
+                            date: dateCtrl.text,
+                            attendees: 1,
+                            attendeeUids: [uid],
+                            description: descCtrl.text.trim(),
+                            location: locationCtrl.text.trim(),
+                          );
+                          await service.createEvent(event);
+                          if (ctx.mounted) Navigator.pop(ctx);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text('Event created!')));
+                          }
+                        },
+                  child: saving
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white))
+                      : const Text('Create Event',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  static String _monthName(int m) => const [
+        '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      ][m];
 
   Widget _buildFallbackList(BuildContext context) {
     return ListView.builder(
