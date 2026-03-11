@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -40,6 +41,7 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
   JuiceUser? _myUser;
   bool _showEmojiPanel = false;
   int _emojiCategoryIndex = 0;
+  Timer? _typingTimer;
 
   // Emoji categories shown in the picker
   static const _emojiCategories = [
@@ -95,6 +97,17 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
       if (_textFocusNode.hasFocus && _showEmojiPanel) {
         setState(() => _showEmojiPanel = false);
       }
+    });
+    // Broadcast typing status while user is typing
+    _controller.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    if (widget.partnerUid == null) return;
+    _service.setTyping(widget.matchId, _myUid, true);
+    _typingTimer?.cancel();
+    _typingTimer = Timer(const Duration(seconds: 4), () {
+      _service.setTyping(widget.matchId, _myUid, false);
     });
   }
 
@@ -242,6 +255,9 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
   void _sendMessage() {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
+    // Stop typing indicator immediately on send
+    _typingTimer?.cancel();
+    _service.setTyping(widget.matchId, _myUid, false);
     _controller.clear();
 
     _service.sendMessage(
@@ -360,6 +376,10 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
 
   @override
   void dispose() {
+    _typingTimer?.cancel();
+    // Clear typing flag when leaving the screen
+    _service.setTyping(widget.matchId, _myUid, false);
+    _controller.removeListener(_onTextChanged);
     _controller.dispose();
     _scrollController.dispose();
     _textFocusNode.dispose();
@@ -552,6 +572,29 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
               },
             ),
           ),
+          // Typing indicator row
+          if (widget.partnerUid != null)
+            StreamBuilder<bool>(
+              stream: _service.streamPartnerTyping(
+                  widget.matchId, widget.partnerUid!),
+              builder: (context, snap) {
+                final isTyping = snap.data ?? false;
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: isTyping
+                      ? Align(
+                          key: const ValueKey('typing'),
+                          alignment: Alignment.centerLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.only(
+                                left: 16, bottom: 6, top: 2),
+                            child: _TypingBubble(name: widget.name),
+                          ),
+                        )
+                      : const SizedBox.shrink(key: ValueKey('no-typing')),
+                );
+              },
+            ),
           _buildInput(),
         ],
       ),
