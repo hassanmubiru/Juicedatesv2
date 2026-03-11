@@ -184,28 +184,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (_) => _VerificationSheet(
         user: _user!,
         onSubmitted: () {
-          if (mounted) {
-            setState(() {
-              // Reflect pending state locally without full reload
-              _user = JuiceUser(
-                uid: _user!.uid,
-                displayName: _user!.displayName,
-                photoUrl: _user!.photoUrl,
-                photoUrls: _user!.photoUrls,
-                bio: _user!.bio,
-                age: _user!.age,
-                city: _user!.city,
-                interests: _user!.interests,
-                gender: _user!.gender,
-                lookingFor: _user!.lookingFor,
-                latitude: _user!.latitude,
-                longitude: _user!.longitude,
-                isPremium: _user!.isPremium,
-                showAge: _user!.showAge,
-                verificationStatus: 'pending',
-              );
-            });
-          }
+          // Reload user from Firestore to reflect the pending status
+          _loadUserStatus();
         },
       ),
     );
