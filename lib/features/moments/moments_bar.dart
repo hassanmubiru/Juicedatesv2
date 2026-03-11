@@ -202,6 +202,14 @@ class _MomentViewerState extends State<MomentViewer>
     with SingleTickerProviderStateMixin {
   late int _index;
   late AnimationController _ctrl;
+  final _replyCtrl = TextEditingController();
+  bool _replyFocused = false;
+  bool _sendingReply = false;
+  final _service = FirestoreService();
+
+  String? get _myUid => FirebaseAuth.instance.currentUser?.uid;
+  String get _myName =>
+      FirebaseAuth.instance.currentUser?.displayName ?? 'Someone';
 
   @override
   void initState() {
