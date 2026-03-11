@@ -492,3 +492,146 @@ class _ProfileStrengthCard extends StatelessWidget {
     );
   }
 }
+
+// ── Juice Verification Sheet ─────────────────────────────────────────────────
+
+class _VerificationSheet extends StatefulWidget {
+  final JuiceUser user;
+  final VoidCallback onSubmitted;
+  const _VerificationSheet({required this.user, required this.onSubmitted});
+
+  @override
+  State<_VerificationSheet> createState() => _VerificationSheetState();
+}
+
+class _VerificationSheetState extends State<_VerificationSheet> {
+  File? _selfie;
+  bool _submitting = false;
+  final _picker = ImagePicker();
+  final _cloudinary = CloudinaryService();
+  final _service = FirestoreService();
+
+  Future<void> _pickSelfie() async {
+    final picked = await _picker.pickImage(
+        source: ImageSource.camera, imageQuality: 80, preferredCameraDevice: CameraDevice.front);
+    if (picked != null) setState(() => _selfie = File(picked.path));
+  }
+
+  Future<void> _submit() async {
+    if (_selfie == null) return;
+    setState(() => _submitting = true);
+    try {
+      final url = await _cloudinary.uploadPhoto(
+        file: _selfie!,
+        publicId:
+            'verify_${widget.user.uid}_${DateTime.now().millisecondsSinceEpoch}',
+      );
+      await _service.submitVerificationRequest(
+        uid: widget.user.uid,
+        displayName: widget.user.displayName,
+        selfieUrl: url,
+      );
+      widget.onSubmitted();
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text(
+                  'Verification request submitted! We\'ll review within 24h.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
+        setState(() => _submitting = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: MediaQuery.of(context).viewInsets,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              const Expanded(
+                  child: Text('Juice Verification',
+                      style: TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.bold))),
+              IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Navigator.pop(context)),
+            ]),
+            const SizedBox(height: 4),
+            const Text(
+              'Take a selfie to verify your identity. Our team will review and add a ✅ badge to your profile within 24 hours.',
+              style: TextStyle(color: Colors.grey, fontSize: 13),
+            ),
+            const SizedBox(height: 20),
+            Center(
+              child: GestureDetector(
+                onTap: _pickSelfie,
+                child: Container(
+                  width: 140,
+                  height: 140,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                        color: _selfie != null
+                            ? JuiceTheme.primaryTangerine
+                            : Colors.grey[300]!,
+                        width: 2),
+                  ),
+                  child: _selfie != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Image.file(_selfie!, fit: BoxFit.cover))
+                      : const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.camera_alt_outlined,
+                                size: 36, color: Colors.grey),
+                            SizedBox(height: 6),
+                            Text('Take Selfie',
+                                style: TextStyle(color: Colors.grey)),
+                          ],
+                        ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: JuiceTheme.primaryTangerine,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                onPressed: (_selfie == null || _submitting) ? null : _submit,
+                child: _submitting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white))
+                    : const Text('Submit for Verification',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
