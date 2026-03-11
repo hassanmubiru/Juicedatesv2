@@ -37,6 +37,9 @@ class JuiceUser {
   // Boost (Tinder-style)
   final DateTime? boostExpiresAt;
   final String? verificationStatus; // null | 'pending' | 'verified' | 'rejected'
+  // Presence
+  final bool isOnline;
+  final DateTime? lastSeen;
 
   JuiceUser({
     required this.uid,
@@ -72,6 +75,8 @@ class JuiceUser {
     this.passportCity,
     this.boostExpiresAt,
     this.verificationStatus,
+    this.isOnline = false,
+    this.lastSeen,
   });
 
   Map<String, dynamic> toJson() => {
@@ -110,6 +115,8 @@ class JuiceUser {
             ? Timestamp.fromDate(boostExpiresAt!)
             : null,
         if (verificationStatus != null) 'verificationStatus': verificationStatus,
+        'isOnline': isOnline,
+        if (lastSeen != null) 'lastSeen': Timestamp.fromDate(lastSeen!),
       };
 
   factory JuiceUser.fromFirestore(DocumentSnapshot doc) {
@@ -148,6 +155,8 @@ class JuiceUser {
       passportCity: data['passportCity'],
       boostExpiresAt: (data['boostExpiresAt'] as Timestamp?)?.toDate(),
       verificationStatus: data['verificationStatus'],
+      isOnline: data['isOnline'] ?? false,
+      lastSeen: (data['lastSeen'] as Timestamp?)?.toDate(),
     );
   }
 }

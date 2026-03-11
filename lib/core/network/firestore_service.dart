@@ -20,6 +20,13 @@ class FirestoreService {
     );
   }
 
+  Future<void> updatePresence(String uid, {required bool online}) async {
+    await _db.collection('users').doc(uid).update({
+      'isOnline': online,
+      'lastSeen': FieldValue.serverTimestamp(),
+    });
+  }
+
   Future<void> blockUser(String myUid, String blockedUid) async {
     await _db.collection('users').doc(myUid).update({
       'blockedUids': FieldValue.arrayUnion([blockedUid]),
