@@ -715,7 +715,10 @@ class FirestoreService {
     final snap = await _db.collection('users').limit(200).get();
     final candidates = snap.docs
         .map((d) => JuiceUser.fromFirestore(d))
-        .where((u) => !excluded.contains(u.uid) && !u.isAdmin && !u.isBanned)
+        .where((u) => !excluded.contains(u.uid) &&
+            !u.isAdmin &&
+            !u.isBanned &&
+            !u.invisibleMode)
         .toList();
     candidates.sort((a, b) {
       final sA = JuiceEngine.computeSparks(current.juiceProfile, a.juiceProfile);

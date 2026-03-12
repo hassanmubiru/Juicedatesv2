@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/network/firestore_service.dart';
 import '../../core/theme/juice_theme.dart';
 import '../../core/utils/juice_engine.dart';
@@ -19,6 +20,7 @@ class _TopPicksScreenState extends State<TopPicksScreen> {
   bool _isPremium = false;
   List<JuiceUser> _picks = [];
   JuiceUser? _currentUser;
+  String? _error;
 
   final _service = FirestoreService();
 
@@ -29,22 +31,34 @@ class _TopPicksScreenState extends State<TopPicksScreen> {
   }
 
   Future<void> _load() async {
+    setState(() { _loading = true; _error = null; });
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
-    final user = await _service.getUserOnce(uid);
-    if (!mounted) return;
-    if (user?.isPremium ?? false) {
-      final picks = await _service.getTopPicks(uid);
-      if (mounted) {
-        setState(() {
-          _isPremium = true;
-          _currentUser = user;
-          _picks = picks;
-          _loading = false;
-        });
+    if (uid == null) {
+      if (mounted) setState(() => _loading = false);
+      return;
+    }
+    try {
+      final user = await _service.getUserOnce(uid);
+      if (!mounted) return;
+      if (user == null) {
+        setState(() { _isPremium = false; _loading = false; });
+        return;
       }
-    } else {
-      if (mounted) setState(() { _isPremium = false; _loading = false; });
+      if (user.isPremium) {
+        final picks = await _service.getTopPicks(uid);
+        if (mounted) {
+          setState(() {
+            _isPremium = true;
+            _currentUser = user;
+            _picks = picks;
+            _loading = false;
+          });
+        }
+      } else {
+        if (mounted) setState(() { _isPremium = false; _loading = false; });
+      }
+    } catch (e) {
+      if (mounted) setState(() { _error = e.toString(); _loading = false; });
     }
   }
 
@@ -63,9 +77,37 @@ class _TopPicksScreenState extends State<TopPicksScreen> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : _isPremium
-              ? _buildPicks()
-              : _buildLocked(),
+          : _error != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline_rounded,
+                            size: 56, color: Colors.grey),
+                        const SizedBox(height: 16),
+                        const Text('Could not load Top Picks',
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        Text(_error!,
+                            style: const TextStyle(
+                                color: Colors.grey, fontSize: 12),
+                            textAlign: TextAlign.center),
+                        const SizedBox(height: 20),
+                        TextButton.icon(
+                          onPressed: _load,
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text('Try again'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : _isPremium
+                  ? _buildPicks()
+                  : _buildLocked(),
     );
   }
 
@@ -199,8 +241,12 @@ class _TopPickCard extends StatelessWidget {
           children: [
             // Photo background
             photo != null && photo.isNotEmpty
-                ? Image.network(photo, fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _placeholder())
+                ? CachedNetworkImage(
+                    imageUrl: photo,
+                    fit: BoxFit.cover,
+                    errorWidget: (_, __, ___) => _placeholder(),
+                    placeholder: (_, __) => _placeholder(),
+                  )
                 : _placeholder(),
             // Gradient overlay
             Container(
