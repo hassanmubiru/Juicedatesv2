@@ -104,9 +104,16 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
 
   void _onTextChanged() {
     if (widget.partnerUid == null) return;
+    // Empty text means user deleted everything or message was just sent —
+    // cancel the typing flag instead of setting it
+    if (_controller.text.isEmpty) {
+      _typingTimer?.cancel();
+      _service.setTyping(widget.matchId, _myUid, false);
+      return;
+    }
     _service.setTyping(widget.matchId, _myUid, true);
     _typingTimer?.cancel();
-    _typingTimer = Timer(const Duration(seconds: 4), () {
+    _typingTimer = Timer(const Duration(seconds: 3), () {
       _service.setTyping(widget.matchId, _myUid, false);
     });
   }
@@ -761,31 +768,22 @@ class _TypingBubbleState extends State<_TypingBubble>
   @override
   void initState() {
     super.initState();
-    _dots = List.generate(
-      3,
-      (i) => AnimationController(
+    _dots = List.generate(3, (i) {
+      final c = AnimationController(
         vsync: this,
-        duration: const Duration(milliseconds: 400),
-      ),
-    );
+        duration: const Duration(milliseconds: 500),
+      );
+      // Stagger each dot by 160 ms so they ripple one after another
+      Future.delayed(Duration(milliseconds: 160 * i), () {
+        if (mounted) c.repeat(reverse: true);
+      });
+      return c;
+    });
     _anims = _dots
-        .map((c) => Tween<double>(begin: 0, end: -6).animate(
+        .map((c) => Tween<double>(begin: 0, end: -7).animate(
               CurvedAnimation(parent: c, curve: Curves.easeInOut),
             ))
         .toList();
-    _startLoop();
-  }
-
-  void _startLoop() async {
-    while (mounted) {
-      for (int i = 0; i < _dots.length; i++) {
-        if (!mounted) return;
-        await Future.delayed(Duration(milliseconds: 150 * i));
-        if (!mounted) return;
-        _dots[i].forward().then((_) => _dots[i].reverse());
-      }
-      await Future.delayed(const Duration(milliseconds: 800));
-    }
   }
 
   @override
@@ -825,10 +823,10 @@ class _TypingBubbleState extends State<_TypingBubble>
                 offset: Offset(0, _anims[i].value),
                 child: Container(
                   margin: const EdgeInsets.symmetric(horizontal: 2),
-                  width: 6,
-                  height: 6,
+                  width: 7,
+                  height: 7,
                   decoration: BoxDecoration(
-                    color: Colors.grey[400],
+                    color: JuiceTheme.primaryTangerine.withValues(alpha: 0.7),
                     shape: BoxShape.circle,
                   ),
                 ),
