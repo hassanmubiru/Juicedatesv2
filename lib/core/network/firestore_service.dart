@@ -95,7 +95,8 @@ class FirestoreService {
               !excluded.contains(u.uid) &&
               !u.blockedUids.contains(uid) &&
               u.isBanned != true &&
-              !u.isAdmin)
+              !u.isAdmin &&
+              !u.invisibleMode)
           .toList();
       // Boosted users always float to the top; within each group sort by Sparks
       final now = DateTime.now();

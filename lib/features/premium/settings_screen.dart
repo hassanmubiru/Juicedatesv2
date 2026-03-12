@@ -78,6 +78,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
       await FirestoreService().updateUserProfile(uid, {'invisibleMode': val});
+      // Immediately update online presence to reflect the new invisible state
+      await FirestoreService().updatePresence(uid, online: !val);
     }
   }
 

@@ -40,6 +40,8 @@ class JuiceUser {
   // Presence
   final bool isOnline;
   final DateTime? lastSeen;
+  // Privacy
+  final bool invisibleMode;
 
   JuiceUser({
     required this.uid,
@@ -77,6 +79,7 @@ class JuiceUser {
     this.verificationStatus,
     this.isOnline = false,
     this.lastSeen,
+    this.invisibleMode = false,
   });
 
   Map<String, dynamic> toJson() => {
@@ -117,6 +120,7 @@ class JuiceUser {
         if (verificationStatus != null) 'verificationStatus': verificationStatus,
         'isOnline': isOnline,
         if (lastSeen != null) 'lastSeen': Timestamp.fromDate(lastSeen!),
+        'invisibleMode': invisibleMode,
       };
 
   factory JuiceUser.fromFirestore(DocumentSnapshot doc) {
@@ -157,6 +161,7 @@ class JuiceUser {
       verificationStatus: data['verificationStatus'],
       isOnline: data['isOnline'] ?? false,
       lastSeen: (data['lastSeen'] as Timestamp?)?.toDate(),
+      invisibleMode: data['invisibleMode'] ?? false,
     );
   }
 }

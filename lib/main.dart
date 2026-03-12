@@ -160,11 +160,15 @@ class _JuiceDatesAppState extends State<JuiceDatesApp>
     }
   }
 
-  void _setPresence(bool online) {
+  void _setPresence(bool online) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid != null) {
-      _presenceService.updatePresence(uid, online: online);
+    if (uid == null) return;
+    // Respect invisible mode — never appear online when invisible
+    if (online) {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool('invisibleMode') == true) return;
     }
+    _presenceService.updatePresence(uid, online: online);
   }
 
   /// Show an in-app heads-up notification when a push arrives while the app is open.
