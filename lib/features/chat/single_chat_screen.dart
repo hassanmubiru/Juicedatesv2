@@ -152,6 +152,23 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
     });
   }
 
+  String _formatLastSeen(DateTime lastSeen) {
+    final diff = DateTime.now().difference(lastSeen);
+    if (diff.inSeconds < 60) return 'just now';
+    if (diff.inMinutes < 60) {
+      final m = diff.inMinutes;
+      return '$m ${m == 1 ? 'minute' : 'minutes'} ago';
+    }
+    if (diff.inHours < 24) {
+      final h = diff.inHours;
+      return '$h ${h == 1 ? 'hour' : 'hours'} ago';
+    }
+    if (diff.inDays == 1) return 'yesterday';
+    if (diff.inDays < 7) return '${diff.inDays} days ago';
+    final d = lastSeen;
+    return '${d.day}/${d.month}/${d.year}';
+  }
+
   Future<void> _handleMenuAction(String action) async {
     if (widget.partnerUid == null) return;
     if (action == 'report') {
@@ -397,23 +414,78 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: [
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: Colors.grey[300],
-              backgroundImage: (_partnerPhotoUrl != null &&
-                      _partnerPhotoUrl!.isNotEmpty)
-                  ? CachedNetworkImageProvider(_partnerPhotoUrl!)
-                  : null,
-              child: (_partnerPhotoUrl == null || _partnerPhotoUrl!.isEmpty)
-                  ? Icon(Icons.person, color: Colors.grey[500], size: 20)
-                  : null,
-            ),
-            const SizedBox(width: 10),
-            Text(widget.name, style: const TextStyle(fontSize: 18)),
-          ],
-        ),
+        title: widget.partnerUid != null
+            ? StreamBuilder<JuiceUser>(
+                stream: _service.getUser(widget.partnerUid!),
+                builder: (context, snap) {
+                  final partner = snap.data;
+                  final isOnline = partner?.isOnline ?? false;
+                  final lastSeen = partner?.lastSeen;
+                  final statusText = isOnline
+                      ? 'Online'
+                      : lastSeen != null
+                          ? 'Last seen ${_formatLastSeen(lastSeen)}'
+                          : '';
+                  return Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 18,
+                        backgroundColor: Colors.grey[300],
+                        backgroundImage: (_partnerPhotoUrl != null &&
+                                _partnerPhotoUrl!.isNotEmpty)
+                            ? CachedNetworkImageProvider(_partnerPhotoUrl!)
+                            : null,
+                        child: (_partnerPhotoUrl == null ||
+                                _partnerPhotoUrl!.isEmpty)
+                            ? Icon(Icons.person,
+                                color: Colors.grey[500], size: 20)
+                            : null,
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(widget.name,
+                              style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600)),
+                          if (statusText.isNotEmpty)
+                            Text(
+                              statusText,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isOnline
+                                    ? Colors.greenAccent[400]
+                                    : Colors.grey[400],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
+              )
+            : Row(
+                children: [
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundColor: Colors.grey[300],
+                    backgroundImage: (_partnerPhotoUrl != null &&
+                            _partnerPhotoUrl!.isNotEmpty)
+                        ? CachedNetworkImageProvider(_partnerPhotoUrl!)
+                        : null,
+                    child: (_partnerPhotoUrl == null ||
+                            _partnerPhotoUrl!.isEmpty)
+                        ? Icon(Icons.person,
+                            color: Colors.grey[500], size: 20)
+                        : null,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(widget.name,
+                      style: const TextStyle(fontSize: 18)),
+                ],
+              ),
         actions: [
           IconButton(
             icon: const Icon(Icons.videocam_rounded),

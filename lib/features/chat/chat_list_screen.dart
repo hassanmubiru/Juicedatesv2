@@ -79,42 +79,43 @@ class ChatListScreen extends StatelessWidget {
                     ),
                   ),
                   leading: StreamBuilder<JuiceUser>(
-                stream: service.getUser(partnerUid),
-                builder: (context, userSnap) {
-                  final isOnline = userSnap.data?.isOnline ?? false;
-                  return Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 28,
-                        backgroundColor: JuiceTheme.secondaryCitrus,
-                        backgroundImage:
-                            photoUrl != null && photoUrl.isNotEmpty
-                                ? NetworkImage(photoUrl)
+                    stream: service.getUser(partnerUid),
+                    builder: (context, userSnap) {
+                      final partner = userSnap.data;
+                      final isOnline = partner?.isOnline ?? false;
+                      return Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 28,
+                            backgroundColor: JuiceTheme.secondaryCitrus,
+                            backgroundImage:
+                                photoUrl != null && photoUrl.isNotEmpty
+                                    ? NetworkImage(photoUrl)
+                                    : null,
+                            child: photoUrl == null || photoUrl.isEmpty
+                                ? const Icon(Icons.person,
+                                    color: Colors.white, size: 30)
                                 : null,
-                        child: photoUrl == null || photoUrl.isEmpty
-                            ? const Icon(Icons.person,
-                                color: Colors.white, size: 30)
-                            : null,
-                      ),
-                      if (isOnline)
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            width: 14,
-                            height: 14,
-                            decoration: BoxDecoration(
-                              color: JuiceTheme.juiceGreen,
-                              shape: BoxShape.circle,
-                              border:
-                                  Border.all(color: Colors.white, width: 2),
-                            ),
                           ),
-                        ),
-                    ],
-                  );
-                },
-              ),
+                          if (isOnline)
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                width: 14,
+                                height: 14,
+                                decoration: BoxDecoration(
+                                  color: JuiceTheme.juiceGreen,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                      color: Colors.white, width: 2),
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
                   title: Row(
                     children: [
                       Text(partnerName,
@@ -152,35 +153,60 @@ class ChatListScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        _timeAgo(match.lastMessageTime),
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: hasUnread
-                                ? JuiceTheme.primaryTangerine
-                                : Colors.grey),
-                      ),
-                      if (hasUnread) ...[
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: JuiceTheme.primaryTangerine,
-                            borderRadius: BorderRadius.circular(8),
+                  trailing: StreamBuilder<JuiceUser>(
+                    stream: service.getUser(partnerUid),
+                    builder: (context, userSnap) {
+                      final partner = userSnap.data;
+                      final isOnline = partner?.isOnline ?? false;
+                      final lastSeen = partner?.lastSeen;
+                      final presenceText = isOnline
+                          ? 'Online'
+                          : lastSeen != null
+                              ? _lastSeenShort(lastSeen)
+                              : null;
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            _timeAgo(match.lastMessageTime),
+                            style: TextStyle(
+                                fontSize: 12,
+                                color: hasUnread
+                                    ? JuiceTheme.primaryTangerine
+                                    : Colors.grey),
                           ),
-                          child: const Text('NEW',
+                          if (presenceText != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              presenceText,
                               style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold)),
-                        ),
-                      ],
-                    ],
+                                fontSize: 11,
+                                color: isOnline
+                                    ? Colors.green[400]
+                                    : Colors.grey[400],
+                              ),
+                            ),
+                          ],
+                          if (hasUnread) ...[
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: JuiceTheme.primaryTangerine,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text('NEW',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold)),
+                            ),
+                          ],
+                        ],
+                      );
+                    },
                   ),
                 ),
               );
@@ -195,6 +221,15 @@ class ChatListScreen extends StatelessWidget {
     final diff = DateTime.now().difference(dt);
     if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
     if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
+  }
+
+  String _lastSeenShort(DateTime lastSeen) {
+    final diff = DateTime.now().difference(lastSeen);
+    if (diff.inSeconds < 60) return 'just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays == 1) return 'yesterday';
     return '${diff.inDays}d ago';
   }
 
