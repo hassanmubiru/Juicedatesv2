@@ -150,5 +150,37 @@ class JuiceEngine {
       if (results.length == 3) break;
     }
     return results;
+  /// Returns a 0–100 profile strength score and a list of missing field hints.
+  static ({int score, List<String> missing}) computeProfileStrength(dynamic u) {
+    // We use dynamic here to avoid circular dependencies with JuiceUser if needed,
+    // though usually JuiceUser is available.
+    final photos = u.photos as List<String>;
+    final bio = u.bio as String?;
+    final interests = u.interests as List<String>;
+    final university = u.university as String?;
+    final jobTitle = u.jobTitle as String?;
+    final orientation = u.sexualOrientation as String?;
+    final juiceProfile = u.juiceProfile;
+    final city = u.city as String;
+
+    final checks = <(bool, String)>[
+      (photos.isNotEmpty, 'Add a profile photo'),
+      (photos.length >= 3, 'Add 3+ photos'),
+      (bio != null && bio.trim().length > 20, 'Write a longer bio'),
+      (interests.length >= 3, 'Add 3+ interests'),
+      (university != null && university.isNotEmpty, 'Add your university'),
+      (jobTitle != null && jobTitle.isNotEmpty, 'Add your job title'),
+      (orientation != null, 'Set sexual orientation'),
+      (bio != null && bio.trim().isNotEmpty, 'Write something in your bio'),
+      (juiceProfile.family > 0, 'Complete the Juice Quiz'),
+      (city != 'Unknown' && city.isNotEmpty, 'Set your city'),
+    ];
+    final total = checks.length;
+    final done = checks.where((c) => c.$1).length;
+    final missing = checks
+        .where((c) => !c.$1)
+        .map((c) => c.$2)
+        .toList();
+    return (score: (done * 100 ~/ total), missing: missing.take(3).toList());
   }
 }
