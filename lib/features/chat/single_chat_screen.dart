@@ -479,10 +479,18 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(widget.name,
-                              style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600)),
+                          Row(
+                            children: [
+                              Text(widget.name,
+                                  style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600)),
+                              if (partner?.verificationStatus == 'verified') ...[
+                                const SizedBox(width: 4),
+                                const Icon(Icons.verified_rounded, color: Colors.blue, size: 16),
+                              ],
+                            ],
+                          ),
                           if (statusText.isNotEmpty)
                             Text(
                               statusText,

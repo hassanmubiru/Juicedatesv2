@@ -182,11 +182,30 @@ class _NewMatchCircle extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 6),
-            Text(
-              partnerName.split(' ')[0],
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: Text(
+                    partnerName.split(' ')[0],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                  ),
+                ),
+                StreamBuilder<JuiceUser>(
+                  stream: FirestoreService().getUser(partnerUid),
+                  builder: (context, snap) {
+                    if (snap.data?.verificationStatus == 'verified') {
+                      return const Padding(
+                        padding: EdgeInsets.only(left: 2),
+                        child: Icon(Icons.verified_rounded, color: Colors.blue, size: 12),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ],
             ),
           ],
         ),
@@ -257,12 +276,31 @@ class _MessageTile extends StatelessWidget {
       title: Row(
         children: [
           Expanded(
-            child: Text(
-              partnerName,
-              style: TextStyle(
-                fontWeight: hasUnread ? FontWeight.w900 : FontWeight.bold,
-                fontSize: 16,
-              ),
+            child: Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    partnerName,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontWeight: hasUnread ? FontWeight.w900 : FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                StreamBuilder<JuiceUser>(
+                  stream: service.getUser(partnerUid),
+                  builder: (context, snap) {
+                    if (snap.data?.verificationStatus == 'verified') {
+                      return const Padding(
+                        padding: EdgeInsets.only(left: 4),
+                        child: Icon(Icons.verified_rounded, color: Colors.blue, size: 16),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ],
             ),
           ),
           Text(

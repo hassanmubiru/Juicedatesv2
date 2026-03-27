@@ -294,20 +294,31 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Expanded(
-                              child: Text(
-                                user.showAge
-                                    ? '${user.displayName}, ${user.age}'
-                                    : user.displayName,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 30,
-                                  fontWeight: FontWeight.bold,
-                                  shadows: [
-                                    Shadow(
-                                        blurRadius: 8,
-                                        color: Colors.black54)
+                              child: Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      user.showAge
+                                          ? '${user.displayName}, ${user.age}'
+                                          : user.displayName,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 30,
+                                        fontWeight: FontWeight.bold,
+                                        shadows: [
+                                          Shadow(
+                                              blurRadius: 8,
+                                              color: Colors.black54)
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  if (user.verificationStatus == 'verified') ...[
+                                    const SizedBox(width: 8),
+                                    const Icon(Icons.verified_rounded, color: Colors.blue, size: 28),
                                   ],
-                                ),
+                                ],
                               ),
                             ),
                             if (widget.sparksScore >= 60)

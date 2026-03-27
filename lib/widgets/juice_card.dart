@@ -56,14 +56,22 @@ class JuiceCard extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(
-                          user.showAge
-                              ? '${user.displayName}, ${user.age}'
-                              : user.displayName,
-                          style: const TextStyle(
-                            color: Colors.white, fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        child: Row(
+                          children: [
+                            Text(
+                              user.showAge
+                                  ? '${user.displayName}, ${user.age}'
+                                  : user.displayName,
+                              style: const TextStyle(
+                                color: Colors.white, fontSize: 26,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            if (user.verificationStatus == 'verified') ...[
+                              const SizedBox(width: 6),
+                              const Icon(Icons.verified_rounded, color: Colors.blue, size: 24),
+                            ],
+                          ],
                         ),
                       ),
                       if (sparksScore >= 75)
