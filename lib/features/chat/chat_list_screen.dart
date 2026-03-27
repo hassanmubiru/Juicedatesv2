@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/network/firestore_service.dart';
 import '../../core/theme/juice_theme.dart';
 import '../../models/user_models.dart';
@@ -14,7 +15,9 @@ class ChatListScreen extends StatelessWidget {
     final service = FirestoreService();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Chats')),
+      appBar: AppBar(
+        title: const Text('Chats'),
+      ),
       body: StreamBuilder<List<JuiceMatch>>(
         stream: service.getMatches(uid),
         builder: (context, snapshot) {
@@ -22,221 +25,93 @@ class ChatListScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.wifi_off_rounded, size: 60, color: Colors.grey),
-                    const SizedBox(height: 16),
-                    const Text('Could not load chats',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Text('${snapshot.error}',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                  ],
-                ),
-              ),
-            );
+            return _buildErrorState(snapshot.error.toString());
           }
-          final matches = snapshot.data ?? [];
-          if (matches.isEmpty) return _buildEmptyState();
+          
+          final allMatches = snapshot.data ?? [];
+          if (allMatches.isEmpty) return _buildEmptyState();
 
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: matches.length,
-            separatorBuilder: (_, __) => const Divider(),
-            itemBuilder: (context, index) {
-              final match = matches[index];
-              final partnerName = match.getPartnerName(uid);
-              final photoUrl = match.getPartnerPhoto(uid);
-              final partnerUid = match.getPartnerUid(uid);
-              // "NEW" = last message was from partner and I haven't read it
-              final hasUnread = match.lastMessage.isNotEmpty &&
-                  !match.readByUids.contains(uid);
-              // Last message was sent by me → show read receipt
-              final lastSentByMe = match.lastMessage.isNotEmpty &&
-                  !hasUnread;
+          final newMatches = allMatches.where((m) => m.messageCount == 0).toList();
+          final activeMatches = allMatches.where((m) => m.messageCount > 0).toList();
 
-              return Container(
-                decoration: hasUnread
-                    ? BoxDecoration(
-                        color: JuiceTheme.primaryTangerine.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(12),
-                      )
-                    : null,
-                child: ListTile(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => SingleChatScreen(
-                        name: partnerName,
-                        matchId: match.matchId,
-                        partnerUid: partnerUid,
+          return CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              // New Matches Section (Horizontal Scroll)
+              if (newMatches.isNotEmpty) ...[
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(16, 16, 16, 12),
+                    child: Text(
+                      'New Matches',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: JuiceTheme.primaryTangerine,
+                        letterSpacing: 0.8,
                       ),
                     ),
                   ),
-                  leading: StreamBuilder<JuiceUser>(
-                    stream: service.getUser(partnerUid),
-                    builder: (context, userSnap) {
-                      final partner = userSnap.data;
-                      final isOnline = partner?.isOnline ?? false;
-                      return Stack(
-                        children: [
-                          CircleAvatar(
-                            radius: 28,
-                            backgroundColor: JuiceTheme.secondaryCitrus,
-                            backgroundImage:
-                                photoUrl != null && photoUrl.isNotEmpty
-                                    ? NetworkImage(photoUrl)
-                                    : null,
-                            child: photoUrl == null || photoUrl.isEmpty
-                                ? const Icon(Icons.person,
-                                    color: Colors.white, size: 30)
-                                : null,
-                          ),
-                          if (isOnline)
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: Container(
-                                width: 14,
-                                height: 14,
-                                decoration: BoxDecoration(
-                                  color: JuiceTheme.juiceGreen,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                      color: Colors.white, width: 2),
-                                ),
-                              ),
-                            ),
-                        ],
-                      );
-                    },
-                  ),
-                  title: Row(
-                    children: [
-                      Text(partnerName,
-                          style: TextStyle(
-                              fontWeight: hasUnread
-                                  ? FontWeight.w800
-                                  : FontWeight.bold)),
-                      const SizedBox(width: 8),
-                      _buildTierBadge(match.tier),
-                    ],
-                  ),
-                  subtitle: Row(
-                    children: [
-                      // Read receipt tick for my last sent message
-                      if (lastSentByMe) ...[
-                        const Icon(Icons.done_all_rounded,
-                            size: 14,
-                            color: JuiceTheme.primaryTangerine),
-                        const SizedBox(width: 4),
-                      ],
-                      Expanded(
-                        child: Text(
-                          match.lastMessage.isEmpty
-                              ? 'Start a conversation!'
-                              : match.lastMessage,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontWeight: hasUnread
-                                ? FontWeight.w600
-                                : FontWeight.normal,
-                            color: hasUnread ? Colors.black87 : Colors.grey,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  trailing: StreamBuilder<JuiceUser>(
-                    stream: service.getUser(partnerUid),
-                    builder: (context, userSnap) {
-                      final partner = userSnap.data;
-                      final isOnline = partner?.isOnline ?? false;
-                      final lastSeen = partner?.lastSeen;
-                      final presenceText = isOnline
-                          ? 'Online'
-                          : lastSeen != null
-                              ? _lastSeenShort(lastSeen)
-                              : null;
-                      return Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            _timeAgo(match.lastMessageTime),
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: hasUnread
-                                    ? JuiceTheme.primaryTangerine
-                                    : Colors.grey),
-                          ),
-                          if (presenceText != null) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              presenceText,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: isOnline
-                                    ? Colors.green[400]
-                                    : Colors.grey[400],
-                              ),
-                            ),
-                          ],
-                          if (hasUnread) ...[
-                            const SizedBox(height: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: JuiceTheme.primaryTangerine,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Text('NEW',
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold)),
-                            ),
-                          ],
-                        ],
-                      );
-                    },
+                ),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 100,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      itemCount: newMatches.length,
+                      itemBuilder: (context, index) {
+                        return _NewMatchCircle(match: newMatches[index], myUid: uid);
+                      },
+                    ),
                   ),
                 ),
-              );
-            },
+                const SliverToBoxAdapter(child: Divider(indent: 16, endIndent: 16, height: 32)),
+              ],
+
+              // Active Messages Section
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Text(
+                    'Messages',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ),
+              ),
+              if (activeMatches.isEmpty)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(40),
+                    child: Center(
+                      child: Text(
+                        'No messages yet.\nReach out and squeeze the day!',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                )
+              else
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      return _MessageTile(match: activeMatches[index], myUid: uid);
+                    },
+                    childCount: activeMatches.length,
+                  ),
+                ),
+              // Extra space at bottom
+              const SliverToBoxAdapter(child: SizedBox(height: 100)),
+            ],
           );
         },
       ),
     );
-  }
-
-  String _timeAgo(DateTime dt) {
-    final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
-  }
-
-  String _lastSeenShort(DateTime lastSeen) {
-    final diff = DateTime.now().difference(lastSeen);
-    if (diff.inSeconds < 60) return 'just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays == 1) return 'yesterday';
-    return '${diff.inDays}d ago';
-  }
-
-  Widget _buildTierBadge(int tier) {
-    const labels = {1: '💚', 2: '🧡', 3: '❤️', 4: '💎'};
-    return Text(labels[tier] ?? '💚',
-        style: const TextStyle(fontSize: 12));
   }
 
   Widget _buildEmptyState() {
@@ -244,19 +119,201 @@ class ChatListScreen extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.chat_bubble_outline_rounded,
-              size: 80, color: Colors.grey),
+          Icon(Icons.chat_bubble_outline_rounded, size: 80, color: Colors.grey),
           SizedBox(height: 16),
-          Text('No chats yet',
-              style:
-                  TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          Text('No matches yet', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           SizedBox(height: 8),
-          Text('Match with someone and start a conversation!',
-              style: TextStyle(color: Colors.grey),
-              textAlign: TextAlign.center),
+          Text('Match with someone and start a conversation!', 
+            style: TextStyle(color: Colors.grey), textAlign: TextAlign.center),
         ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String error) {
+    return Center(child: Text('Error: $error', style: const TextStyle(color: Colors.red)));
+  }
+}
+
+class _NewMatchCircle extends StatelessWidget {
+  final JuiceMatch match;
+  final String myUid;
+  const _NewMatchCircle({required this.match, required this.myUid});
+
+  @override
+  Widget build(BuildContext context) {
+    final photoUrl = match.getPartnerPhoto(myUid);
+    final partnerName = match.getPartnerName(myUid);
+    final partnerUid = match.getPartnerUid(myUid);
+
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SingleChatScreen(
+            name: partnerName,
+            matchId: match.matchId,
+            partnerUid: partnerUid,
+          ),
+        ),
+      ),
+      child: Container(
+        width: 80,
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [JuiceTheme.primaryTangerine, Colors.orangeAccent],
+                ),
+              ),
+              child: CircleAvatar(
+                radius: 32,
+                backgroundColor: Colors.white,
+                backgroundImage: photoUrl != null && photoUrl.isNotEmpty
+                    ? CachedNetworkImageProvider(photoUrl)
+                    : null,
+                child: photoUrl == null || photoUrl.isEmpty
+                    ? const Icon(Icons.person, color: Colors.grey)
+                    : null,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              partnerName.split(' ')[0],
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
+class _MessageTile extends StatelessWidget {
+  final JuiceMatch match;
+  final String myUid;
+  const _MessageTile({required this.match, required this.myUid});
+
+  @override
+  Widget build(BuildContext context) {
+    final service = FirestoreService();
+    final partnerUid = match.getPartnerUid(myUid);
+    final partnerName = match.getPartnerName(myUid);
+    final photoUrl = match.getPartnerPhoto(myUid);
+    final hasUnread = match.lastMessage.isNotEmpty && !match.readByUids.contains(myUid);
+    final lastSentByMe = match.lastMessage.isNotEmpty && !hasUnread;
+
+    return ListTile(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SingleChatScreen(
+            name: partnerName,
+            matchId: match.matchId,
+            partnerUid: partnerUid,
+          ),
+        ),
+      ),
+      leading: StreamBuilder<JuiceUser>(
+        stream: service.getUser(partnerUid),
+        builder: (context, snap) {
+          final isOnline = snap.data?.isOnline ?? false;
+          return Stack(
+            children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: Colors.grey[200],
+                backgroundImage: photoUrl != null && photoUrl.isNotEmpty
+                    ? CachedNetworkImageProvider(photoUrl)
+                    : null,
+                child: photoUrl == null || photoUrl.isEmpty
+                    ? const Icon(Icons.person, color: Colors.grey)
+                    : null,
+              ),
+              if (isOnline)
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(
+              partnerName,
+              style: TextStyle(
+                fontWeight: hasUnread ? FontWeight.w900 : FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ),
+          Text(
+            _timeAgo(match.lastMessageTime),
+            style: TextStyle(
+              fontSize: 11,
+              color: hasUnread ? JuiceTheme.primaryTangerine : Colors.grey,
+            ),
+          ),
+        ],
+      ),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 4.0),
+        child: Row(
+          children: [
+            if (lastSentByMe) ...[
+              const Icon(Icons.done_all_rounded, size: 14, color: JuiceTheme.primaryTangerine),
+              const SizedBox(width: 4),
+            ],
+            Expanded(
+              child: Text(
+                match.lastMessage,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: hasUnread ? Colors.black87 : Colors.grey,
+                  fontWeight: hasUnread ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ),
+            if (hasUnread)
+              Container(
+                margin: const EdgeInsets.only(left: 8),
+                width: 10,
+                height: 10,
+                decoration: const BoxDecoration(
+                  color: JuiceTheme.primaryTangerine,
+                  shape: BoxShape.circle,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _timeAgo(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 1) return 'now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
+    if (diff.inHours < 24) return '${diff.inHours}h';
+    return '${diff.inDays}d';
+  }
+}
