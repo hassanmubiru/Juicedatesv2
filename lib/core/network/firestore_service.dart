@@ -73,47 +73,49 @@ class FirestoreService {
 
   /// Returns feed candidates sorted by Sparks compatibility (best match first).
   /// Premium users: passed users are shown again + larger pool so they never run out.
-  Stream<List<JuiceUser>> getFeedUsers(String uid,
-      {int limit = 60, bool isPremium = false}) {
-    // Basic server-side filtering to reduce data transfer and processing
-    return _db
+  Future<List<JuiceUser>> getFeedUsers(String uid,
+      {int limit = 60, bool isPremium = false}) async {
+    final currentUserDoc = await _db.collection('users').doc(uid).get();
+    if (!currentUserDoc.exists) return [];
+    
+    final currentUser = JuiceUser.fromFirestore(currentUserDoc);
+    final excluded = <String>{
+      ...currentUser.likedUids,
+      // Premium users can re-see passed profiles — they never run out
+      if (!isPremium) ...currentUser.passedUids,
+      ...currentUser.blockedUids,
+      uid,
+    };
+
+    // Server-side filtering to reduce data transfer and processing
+    final snapshot = await _db
         .collection('users')
         .where('isBanned', isEqualTo: false)
         .where('invisibleMode', isEqualTo: false)
         .limit(isPremium ? 200 : limit)
-        .snapshots()
-        .asyncMap((snapshot) async {
-      final currentUserDoc = await _db.collection('users').doc(uid).get();
-      if (!currentUserDoc.exists) return [];
-      final currentUser = JuiceUser.fromFirestore(currentUserDoc);
-      final excluded = <String>{
-        ...currentUser.likedUids,
-        // Premium users can re-see passed profiles — they never run out
-        if (!isPremium) ...currentUser.passedUids,
-        ...currentUser.blockedUids,
-        uid,
-      };
-      final users = snapshot.docs
-          .map((doc) => JuiceUser.fromFirestore(doc))
-          .where((u) =>
-              !excluded.contains(u.uid) &&
-              !u.blockedUids.contains(uid) &&
-              !u.isAdmin)
-          .toList();
-      // Boosted users always float to the top; within each group sort by Sparks
-      final now = DateTime.now();
-      users.sort((a, b) {
-        final aBoost = a.boostExpiresAt != null && a.boostExpiresAt!.isAfter(now);
-        final bBoost = b.boostExpiresAt != null && b.boostExpiresAt!.isAfter(now);
-        if (aBoost != bBoost) return aBoost ? -1 : 1;
-        final sA = JuiceEngine.computeSparks(
-            currentUser.juiceProfile, a.juiceProfile);
-        final sB = JuiceEngine.computeSparks(
-            currentUser.juiceProfile, b.juiceProfile);
-        return sB.compareTo(sA);
-      });
-      return users;
+        .get();
+
+    final users = snapshot.docs
+        .map((doc) => JuiceUser.fromFirestore(doc))
+        .where((u) =>
+            !excluded.contains(u.uid) &&
+            !u.blockedUids.contains(uid) &&
+            !u.isAdmin)
+        .toList();
+        
+    // Boosted users always float to the top; within each group sort by Sparks
+    final now = DateTime.now();
+    users.sort((a, b) {
+      final aBoost = a.boostExpiresAt != null && a.boostExpiresAt!.isAfter(now);
+      final bBoost = b.boostExpiresAt != null && b.boostExpiresAt!.isAfter(now);
+      if (aBoost != bBoost) return aBoost ? -1 : 1;
+      final sA = JuiceEngine.computeSparks(
+          currentUser.juiceProfile, a.juiceProfile);
+      final sB = JuiceEngine.computeSparks(
+          currentUser.juiceProfile, b.juiceProfile);
+      return sB.compareTo(sA);
     });
+    return users;
   }
 
   // ── Likes / Passes ────────────────────────────────────────────────────────
@@ -181,15 +183,11 @@ class FirestoreService {
     if (!isMutual) return null;
 
     // Guard: check whether a match between these two already exists
-    final existing = await _db
-        .collection('matches')
-        .where('users', arrayContains: fromUser.uid)
-        .get();
-    final alreadyMatched = existing.docs.any((d) {
-      final users = List<String>.from(d.data()['users'] ?? []);
-      return users.contains(toUser.uid);
-    });
-    if (alreadyMatched) return null;
+    // O(1) query using deterministic doc id
+    final ids = [fromUser.uid, toUser.uid]..sort();
+    final validMatchId = '${ids[0]}_${ids[1]}';
+    final existingDoc = await _db.collection('matches').doc(validMatchId).get();
+    if (existingDoc.exists) return null;
 
     final sparks =
         JuiceEngine.computeSparks(fromUser.juiceProfile, toUser.juiceProfile);
@@ -212,6 +210,44 @@ class FirestoreService {
     } catch (e) {
       print('Core: Failed to remove match $matchId: $e');
     }
+  }
+
+  /// Complete server-side logic for "Undo Swipe". Restores daily swipe counts
+  /// accurately and optionally deletes a match if one was created.
+  Future<void> undoSwipe(String fromUid, String toUid, String swipeType, bool isPremium) async {
+    final batch = _db.batch();
+    final userRef = _db.collection('users').doc(fromUid);
+
+    if (swipeType == 'pass') {
+      batch.update(userRef, {
+        'passedUids': FieldValue.arrayRemove([toUid]),
+      });
+    } else if (swipeType == 'like') {
+      final updates = <String, dynamic>{
+        'likedUids': FieldValue.arrayRemove([toUid]),
+      };
+      if (!isPremium) updates['dailyLikeCount'] = FieldValue.increment(-1);
+      batch.update(userRef, updates);
+      
+      final ids = [fromUid, toUid]..sort();
+      final matchRef = _db.collection('matches').doc('${ids[0]}_${ids[1]}');
+      batch.delete(matchRef);
+    } else if (swipeType == 'superlike') {
+      final updates = <String, dynamic>{
+        'likedUids': FieldValue.arrayRemove([toUid]),
+        'superLikedUids': FieldValue.arrayRemove([toUid]),
+      };
+      if (!isPremium) {
+        updates['dailyLikeCount'] = FieldValue.increment(-1);
+        updates['dailySuperLikeCount'] = FieldValue.increment(-1);
+      }
+      batch.update(userRef, updates);
+      
+      final ids = [fromUid, toUid]..sort();
+      final matchRef = _db.collection('matches').doc('${ids[0]}_${ids[1]}');
+      batch.delete(matchRef);
+    }
+    await batch.commit();
   }
 
   // ── Super Like ────────────────────────────────────────────────────────────
@@ -278,15 +314,10 @@ class FirestoreService {
 
     if (!isMutual) return null;
 
-    final existing = await _db
-        .collection('matches')
-        .where('users', arrayContains: fromUser.uid)
-        .get();
-    final alreadyMatched = existing.docs.any((d) {
-      final users = List<String>.from(d.data()['users'] ?? []);
-      return users.contains(toUser.uid);
-    });
-    if (alreadyMatched) return null;
+    final ids = [fromUser.uid, toUser.uid]..sort();
+    final validMatchId = '${ids[0]}_${ids[1]}';
+    final existingDoc = await _db.collection('matches').doc(validMatchId).get();
+    if (existingDoc.exists) return null;
 
     final sparks =
         JuiceEngine.computeSparks(fromUser.juiceProfile, toUser.juiceProfile);
