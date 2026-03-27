@@ -112,6 +112,8 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
         if (_superLikesRemaining != null && mounted) {
           setState(() => _superLikesRemaining = (_superLikesRemaining! - 1).clamp(0, 99));
         }
+        // Show celebratory animation
+        if (mounted) _showSuperLikeOverlay();
       } on DailyLimitException {
         if (mounted) _showDailyLimitDialog(isSuperLike: true);
         return false;
@@ -177,6 +179,15 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
     );
   }
 
+  void _showSuperLikeOverlay() {
+    final overlay = Overlay.of(context);
+    final entry = OverlayEntry(
+      builder: (context) => _SuperLikeAnimation(),
+    );
+    overlay.insert(entry);
+    Future.delayed(const Duration(seconds: 2), () => entry.remove());
+  }
+
   @override
   void dispose() {
     _cardController.dispose();
@@ -199,15 +210,43 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
               MaterialPageRoute(builder: (_) => const TopPicksScreen()),
             ),
           ),
-          // Boost button
-          IconButton(
-            icon: const Icon(Icons.bolt_rounded),
-            tooltip: 'Boost',
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const BoostScreen()),
-            ),
-          ),
+          // Boost button (with active indicator if running)
+          Builder(builder: (ctx) {
+            final now = DateTime.now();
+            final active = _currentUser?.boostExpiresAt != null &&
+                _currentUser!.boostExpiresAt!.isAfter(now);
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    Icons.bolt_rounded,
+                    color: active ? JuiceTheme.primaryTangerine : null,
+                  ),
+                  tooltip: 'Boost',
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const BoostScreen()),
+                    );
+                    _loadFeed(); // Refresh user status (boost could be active now)
+                  },
+                ),
+                if (active)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                          color: JuiceTheme.primaryTangerine,
+                          shape: BoxShape.circle),
+                    ),
+                  ),
+              ],
+            );
+          }),
           IconButton(
             icon: const Icon(Icons.tune_rounded),
             onPressed: () => Navigator.pushNamed(context, '/filters'),
