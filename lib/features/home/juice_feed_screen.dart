@@ -44,33 +44,50 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
 
   Future<void> _loadFeed() async {
     setState(() { _loading = true; _error = null; });
-    await _feedSub?.cancel();
-    _feedSub = null;
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
     try {
       _currentUser = await _service.getUserOnce(uid);
+      if (_currentUser == null) throw Exception('User not found');
+      
+      final isPremium = _currentUser!.isPremium;
+
+      // Load daily likes + super likes info
+      final left = await _service.getDailyLikesLeft(uid, isPremium);
+      final superLeft = await _service.getSuperLikesLeft(uid, isPremium);
+      if (mounted) {
+        setState(() { _likesRemaining = left; _superLikesRemaining = superLeft; });
+      }
+
+      final users = await _service.getFeedUsers(uid, limit: 60, isPremium: isPremium);
+      if (mounted) {
+        setState(() {
+          _feedUsers = users;
+          _loading = false;
+        });
+        _precacheNextImages();
+      }
     } catch (e) {
       if (mounted) setState(() { _loading = false; _error = e.toString(); });
-      return;
     }
+  }
 
-    final isPremium = _currentUser?.isPremium ?? false;
+  void _precacheNextImages() {
+    if (!mounted) return;
+    for (int i = 0; i < 3 && i < _feedUsers.length; i++) {
+      final url = _feedUsers[i].photoUrl;
+      if (url != null && url.isNotEmpty) precacheImage(NetworkImage(url), context);
+    }
+  }
 
-    // Load daily likes + super likes info
-    final left = await _service.getDailyLikesLeft(uid, isPremium);
-    final superLeft = await _service.getSuperLikesLeft(uid, isPremium);
-    if (mounted) setState(() { _likesRemaining = left; _superLikesRemaining = superLeft; });
-
-    _feedSub = _service.getFeedUsers(uid, isPremium: isPremium).listen(
-      (users) {
-        if (mounted) setState(() { _feedUsers = users; _loading = false; });
-      },
-      onError: (e) {
-        if (mounted) setState(() { _loading = false; _error = e.toString(); });
-      },
-    );
+  void _precacheNextIndex(int currentIndex) {
+    if (!mounted) return;
+    // Cache the card 2 steps ahead to guarantee it's loaded before we reach it
+    if (currentIndex + 2 < _feedUsers.length) {
+      final url = _feedUsers[currentIndex + 2].photoUrl;
+      if (url != null && url.isNotEmpty) precacheImage(NetworkImage(url), context);
+    }
   }
 
   Future<bool> _onSwipe(
@@ -83,7 +100,6 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
       try {
         final match = await _service.likeUser(_currentUser!, swipedUser);
         if (match != null && mounted) _showMatchDialog(swipedUser);
-        // Update remaining count for free users
         if (_likesRemaining != null && mounted) {
           setState(() => _likesRemaining = (_likesRemaining! - 1).clamp(0, 999));
         }
@@ -91,56 +107,54 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
         if (mounted) _showDailyLimitDialog();
         return false; // don't advance the card
       }
+    } else if (direction == CardSwiperDirection.top) {
+      try {
+        final match = await _service.superLikeUser(_currentUser!, swipedUser);
+        if (match != null && mounted) _showMatchDialog(swipedUser);
+        if (_superLikesRemaining != null && mounted) {
+          setState(() => _superLikesRemaining = (_superLikesRemaining! - 1).clamp(0, 99));
+        }
+      } on DailyLimitException {
+        if (mounted) _showDailyLimitDialog(isSuperLike: true);
+        return false;
+      }
     } else if (direction == CardSwiperDirection.left) {
       await _service.passUser(uid, swipedUser.uid);
     }
     // Remember for undo
     _lastSwipedUser = swipedUser;
     _lastSwipeDirection = direction;
+    
+    if (currentIndex != null) _precacheNextIndex(currentIndex);
     return true;
-  }
-
-  Future<void> _onSuperLike() async {
-    if (_feedUsers.isEmpty || _currentUser == null) return;
-    final swipedUser = _feedUsers[0];
-    try {
-      final match = await _service.superLikeUser(_currentUser!, swipedUser);
-      if (match != null && mounted) _showMatchDialog(swipedUser);
-      if (_superLikesRemaining != null && mounted) {
-        setState(() =>
-            _superLikesRemaining = (_superLikesRemaining! - 1).clamp(0, 99));
-      }
-      _cardController.swipe(CardSwiperDirection.top);
-    } on DailyLimitException {
-      if (mounted) _showDailyLimitDialog(isSuperLike: true);
-    }
   }
 
   bool _onUndoSwipe(
       int? previousIndex, int currentIndex, CardSwiperDirection direction) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null || _lastSwipedUser == null) return true;
+    if (uid == null || _lastSwipedUser == null || _currentUser == null) return true;
     final undoneUser = _lastSwipedUser!;
     final undoneDirection = _lastSwipeDirection;
+    final isPremium = _currentUser!.isPremium;
 
-    // Consistency: If it was a like, we must also remove the potential match doc
-    if (undoneDirection == CardSwiperDirection.right) {
-      _service.removePotentialMatch(uid, undoneUser.uid);
-    }
-
-    // Fire-and-forget Firestore reversal
+    // Delegate undo backend cleanup to FirestoreService
     if (undoneDirection == CardSwiperDirection.left) {
-      _service.updateUserProfile(uid, {
-        'passedUids': FieldValue.arrayRemove([undoneUser.uid]),
-      });
+      _service.undoSwipe(uid, undoneUser.uid, 'pass', isPremium);
     } else if (undoneDirection == CardSwiperDirection.right) {
-      _service.updateUserProfile(uid, {
-        'likedUids': FieldValue.arrayRemove([undoneUser.uid]),
-      });
+      _service.undoSwipe(uid, undoneUser.uid, 'like', isPremium);
       if (_likesRemaining != null && mounted) {
         setState(() => _likesRemaining = _likesRemaining! + 1);
       }
+    } else if (undoneDirection == CardSwiperDirection.top) {
+      _service.undoSwipe(uid, undoneUser.uid, 'superlike', isPremium);
+      if (_likesRemaining != null && mounted) {
+        setState(() => _likesRemaining = _likesRemaining! + 1);
+      }
+      if (_superLikesRemaining != null && mounted) {
+        setState(() => _superLikesRemaining = _superLikesRemaining! + 1);
+      }
     }
+    
     if (mounted) setState(() { _lastSwipedUser = null; _lastSwipeDirection = null; });
     return true;
   }
@@ -167,7 +181,6 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
 
   @override
   void dispose() {
-    _feedSub?.cancel();
     _cardController.dispose();
     super.dispose();
   }
@@ -409,7 +422,7 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
             color: Colors.blue.shade400,
             diameter: 48,
             badge: _superLikesRemaining,
-            onTap: disabled ? null : _onSuperLike,
+            onTap: disabled ? null : () => _cardController.swipe(CardSwiperDirection.top),
           ),
           // Like ❤
           _FeedActionBtn(
