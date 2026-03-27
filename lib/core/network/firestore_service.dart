@@ -575,7 +575,7 @@ class FirestoreService {
       tierUnlocked: tierUnlocked,
       timestamp: DateTime.now(),
       type: 'image',
-      voiceUrl: url, // Re-purpose voiceUrl field for simplicity or use it as a generic attachment URL
+      imageUrl: url, 
     );
 
     await sendMessage(
