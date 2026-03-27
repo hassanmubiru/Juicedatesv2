@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/network/firestore_service.dart';
@@ -42,6 +44,8 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
   bool _showEmojiPanel = false;
   int _emojiCategoryIndex = 0;
   Timer? _typingTimer;
+  final ImagePicker _picker = ImagePicker();
+  bool _isUploading = false;
 
   // Emoji categories shown in the picker
   static const _emojiCategories = [
@@ -274,6 +278,35 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _pickImage() async {
+    final XFile? image = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70, // Optimize for mobile
+    );
+
+    if (image != null && mounted) {
+      setState(() => _isUploading = true);
+      try {
+        await _service.sendImageMessage(
+          widget.matchId,
+          File(image.path),
+          senderId: _myUid,
+          recipientUid: widget.partnerUid,
+          senderName: _myName,
+          tierUnlocked: _currentTier,
+        );
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to send image: $e')),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isUploading = false);
+      }
+    }
   }
 
   void _sendMessage() {
@@ -590,6 +623,50 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
                         ),
                       );
                     }
+                    if (msg.type == 'image' && msg.imageUrl != null) {
+                      return Align(
+                        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: Column(
+                            crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: Container(
+                                  constraints: BoxConstraints(
+                                    maxWidth: MediaQuery.of(context).size.width * 0.7,
+                                    maxHeight: 300,
+                                  ),
+                                  child: CachedNetworkImage(
+                                    imageUrl: msg.imageUrl!,
+                                    placeholder: (context, url) => Container(
+                                      width: 200,
+                                      height: 200,
+                                      color: Colors.grey[200],
+                                      child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                                    ),
+                                    errorWidget: (context, url, error) => const Icon(Icons.error),
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              if (isMe)
+                                Icon(
+                                  msg.readBy.contains(widget.partnerUid)
+                                      ? Icons.done_all_rounded
+                                      : Icons.done_rounded,
+                                  size: 14,
+                                  color: msg.readBy.contains(widget.partnerUid)
+                                      ? JuiceTheme.primaryTangerine
+                                      : Colors.grey[400],
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
                     return Align(
                       alignment: isMe
                           ? Alignment.centerRight
@@ -720,6 +797,11 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
                 icon: Icon(Icons.card_giftcard_outlined, color: Colors.grey[500]),
                 onPressed: _showGiftPicker,
                 tooltip: 'Send a gift',
+              ),
+              IconButton(
+                icon: Icon(Icons.image_outlined, color: Colors.grey[500]),
+                onPressed: _isUploading ? null : _pickImage,
+                tooltip: 'Send a photo',
               ),
               Expanded(
                 child: TextField(
