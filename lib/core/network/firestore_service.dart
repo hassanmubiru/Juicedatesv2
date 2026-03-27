@@ -95,28 +95,35 @@ class FirestoreService {
         .limit(isPremium ? 200 : limit)
         .get();
 
-    final users = snapshot.docs
-        .map((doc) => JuiceUser.fromFirestore(doc))
-        .where((u) =>
-            !excluded.contains(u.uid) &&
-            !u.blockedUids.contains(uid) &&
-            !u.isAdmin)
         .where((u) {
-          // If passporting, we strictly show people in that city.
-          // Otherwise, we show people in the same city as the user.
+          // 1. Passport / City filtering
           if (currentUser.passportCity != null) {
-            return u.city == currentUser.passportCity;
+            if (u.city != currentUser.passportCity) return false;
+          } else {
+            if (u.city != currentUser.city) return false;
           }
-          return u.city == currentUser.city;
+
+          // 2. Gender filtering
+          if (currentUser.showGender != 'everyone') {
+            if (u.showGender != currentUser.showGender) return false;
+          }
+
+          // 3. Age filtering
+          if (u.age < currentUser.ageRangeMin || u.age > currentUser.ageRangeMax) {
+            return false;
+          }
+
+          return true;
         })
         .toList();
-        
+
     // Boosted users always float to the top; within each group sort by Sparks
     final now = DateTime.now();
     users.sort((a, b) {
       final aBoost = a.boostExpiresAt != null && a.boostExpiresAt!.isAfter(now);
       final bBoost = b.boostExpiresAt != null && b.boostExpiresAt!.isAfter(now);
       if (aBoost != bBoost) return aBoost ? -1 : 1;
+      
       final sA = JuiceEngine.computeSparks(
           currentUser.juiceProfile, a.juiceProfile);
       final sB = JuiceEngine.computeSparks(
@@ -807,9 +814,23 @@ class FirestoreService {
             !u.invisibleMode)
         .toList();
     candidates.sort((a, b) {
-      final sA = JuiceEngine.computeSparks(current.juiceProfile, a.juiceProfile);
-      final sB = JuiceEngine.computeSparks(current.juiceProfile, b.juiceProfile);
-      return sB.compareTo(sA);
+      // Logic: Sparks (50%) + Profile Strength (30%) + Verified (20%)
+      final sparksA = JuiceEngine.computeSparks(current.juiceProfile, a.juiceProfile);
+      final sparksB = JuiceEngine.computeSparks(current.juiceProfile, b.juiceProfile);
+      
+      double scoreA = sparksA * 0.5;
+      double scoreB = sparksB * 0.5;
+      
+      if (a.verificationStatus == 'verified') scoreA += 20;
+      if (b.verificationStatus == 'verified') scoreB += 20;
+      
+      // Rough profile strength estimation for sorting
+      if (a.bio != null && a.bio!.length > 50) scoreA += 15;
+      if (b.bio != null && b.bio!.length > 50) scoreB += 15;
+      if (a.photos.length >= 3) scoreA += 15;
+      if (b.photos.length >= 3) scoreB += 15;
+
+      return scoreB.compareTo(scoreA);
     });
     return candidates.take(10).toList();
   }
