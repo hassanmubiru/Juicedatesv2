@@ -183,4 +183,28 @@ class JuiceEngine {
         .toList();
     return (score: (done * 100 ~/ total), missing: missing.take(3).toList());
   }
+
+  /// Returns the category name where both users have the highest shared average score.
+  /// Result is a string like "Family Oriented" or "Career Focused".
+  static String getStrongestSharedValue(JuiceProfile a, JuiceProfile b) {
+    final avgScores = {
+      'Family': (a.family + b.family) / 2,
+      'Career': (a.career + b.career) / 2,
+      'Lifestyle': (a.lifestyle + b.lifestyle) / 2,
+      'Ethics': (a.ethics + b.ethics) / 2,
+      'Fun': (a.fun + b.fun) / 2,
+    };
+    final sorted = avgScores.entries.toList()
+      ..sort((x, y) => y.value.compareTo(x.value));
+    
+    final best = sorted.first.key;
+    switch (best) {
+      case 'Family': return 'Family Oriented';
+      case 'Career': return 'Career Focused';
+      case 'Lifestyle': return 'Lifestyle Match';
+      case 'Ethics': return 'Shared Ethics';
+      case 'Fun': return 'Adventurous Spirits';
+      default: return 'Shared Values';
+    }
+  }
 }

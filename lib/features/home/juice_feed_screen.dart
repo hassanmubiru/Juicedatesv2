@@ -682,6 +682,26 @@ class _JuiceMatchDialog extends StatelessWidget {
                 _circularAvatar(other.photoUrl),
               ],
             ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white38),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 16),
+                  const SizedBox(width: 8),
+                  Text(
+                    JuiceEngine.getStrongestSharedValue(me.juiceProfile, other.juiceProfile),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 40),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
