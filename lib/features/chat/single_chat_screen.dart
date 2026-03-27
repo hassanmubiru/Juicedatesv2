@@ -530,25 +530,11 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.videocam_rounded),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => VideoCallScreen(
-                        name: widget.name,
-                        photoUrl: _partnerPhotoUrl,
-                      )),
-            ),
+            onPressed: () => _initiateCall('video'),
           ),
           IconButton(
             icon: const Icon(Icons.call_rounded),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => AudioCallScreen(
-                        name: widget.name,
-                        photoUrl: _partnerPhotoUrl,
-                      )),
-            ),
+            onPressed: () => _initiateCall('audio'),
           ),
           if (widget.partnerUid != null)
             PopupMenuButton<String>(
@@ -599,6 +585,11 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
 
                 if (messages.isEmpty) {
                   return _buildIcebreakers();
+                }
+
+                // Batch mark as read when new ones arrive
+                if (messages.any((m) => m.senderId != _myUid && !m.readBy.contains(_myUid))) {
+                  _service.markMessagesRead(widget.matchId, _myUid);
                 }
 
                 return ListView.builder(
@@ -675,7 +666,60 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
                         ),
                       );
                     }
-                    return Align(
+                        ),
+                  );
+                }
+                
+                if (msg.type == 'call_request') {
+                  final callType = msg.extra?['callType'] ?? 'video';
+                  return Align(
+                    alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isMe ? Colors.grey[900] : JuiceTheme.primaryTangerine.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(18),
+                        border: isMe ? null : Border.all(color: JuiceTheme.primaryTangerine.withValues(alpha: 0.3)),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            callType == 'video' ? Icons.videocam_rounded : Icons.call_rounded,
+                            color: isMe ? Colors.white54 : JuiceTheme.primaryTangerine,
+                            size: 32,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            isMe ? 'You requested a call' : '${widget.name} is requesting a call',
+                            style: TextStyle(color: isMe ? Colors.white70 : Colors.black87, fontWeight: FontWeight.bold),
+                          ),
+                          if (!isMe) ...[
+                            const SizedBox(height: 12),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: JuiceTheme.primaryTangerine,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              ),
+                              onPressed: () {
+                                if (callType == 'video') {
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => VideoCallScreen(name: widget.name, photoUrl: _partnerPhotoUrl)));
+                                } else {
+                                  Navigator.push(context, MaterialPageRoute(builder: (_) => AudioCallScreen(name: widget.name, photoUrl: _partnerPhotoUrl)));
+                                }
+                              },
+                              icon: const Icon(Icons.phone_in_talk_rounded, size: 16),
+                              label: const Text('JOIN CALL'),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                return Align(
                       alignment: isMe
                           ? Alignment.centerRight
                           : Alignment.centerLeft,

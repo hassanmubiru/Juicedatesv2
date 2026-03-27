@@ -243,10 +243,22 @@ class _MessageTile extends StatelessWidget {
         stream: service.getUser(partnerUid),
         builder: (context, snap) {
           final isOnline = snap.data?.isOnline ?? false;
+          final progression = (match.messageCount % 10) / 10.0;
           return Stack(
+            alignment: Alignment.center,
             children: [
+              SizedBox(
+                width: 62,
+                height: 62,
+                child: CircularProgressIndicator(
+                  value: progression,
+                  strokeWidth: 3,
+                  backgroundColor: Colors.grey[100],
+                  valueColor: const AlwaysStoppedAnimation<Color>(JuiceTheme.secondaryCitrus),
+                ),
+              ),
               CircleAvatar(
-                radius: 28,
+                radius: 27,
                 backgroundColor: Colors.grey[200],
                 backgroundImage: photoUrl != null && photoUrl.isNotEmpty
                     ? CachedNetworkImageProvider(photoUrl)
@@ -257,8 +269,8 @@ class _MessageTile extends StatelessWidget {
               ),
               if (isOnline)
                 Positioned(
-                  bottom: 0,
-                  right: 0,
+                  bottom: 2,
+                  right: 2,
                   child: Container(
                     width: 14,
                     height: 14,
