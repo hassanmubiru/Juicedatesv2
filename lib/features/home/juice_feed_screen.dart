@@ -689,3 +689,73 @@ class _JuiceLimitDialog extends StatelessWidget {
     );
   }
 }
+
+// ── Super Like Animation Overlay ───────────────────────────────────────────
+
+class _SuperLikeAnimation extends StatefulWidget {
+  const _SuperLikeAnimation();
+
+  @override
+  State<_SuperLikeAnimation> createState() => _SuperLikeAnimationState();
+}
+
+class _SuperLikeAnimationState extends State<_SuperLikeAnimation>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _scale;
+  late Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1500));
+    _scale = CurvedAnimation(parent: _ctrl, curve: Curves.elasticOut);
+    _opacity = TweenSequence([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 20),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 60),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 20),
+    ]).animate(_ctrl);
+    _ctrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Center(
+        child: FadeTransition(
+          opacity: _opacity,
+          child: ScaleTransition(
+            scale: _scale,
+            child: Container(
+              padding: const EdgeInsets.all(40),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.blue.withValues(alpha: 0.4),
+                    blurRadius: 50,
+                    spreadRadius: 20,
+                  )
+                ],
+              ),
+              child: const Icon(
+                Icons.star_rounded,
+                color: Colors.blue,
+                size: 160,
+                shadows: [Shadow(color: Colors.black26, blurRadius: 20)],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
