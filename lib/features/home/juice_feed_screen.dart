@@ -188,6 +188,58 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
     Future.delayed(const Duration(seconds: 2), () => entry.remove());
   }
 
+  Widget _buildDiscoveryHeader() {
+    if (_currentUser == null) return const SizedBox.shrink();
+    final isPassport = _currentUser!.passportCity != null;
+    final city = _currentUser!.passportCity ?? _currentUser!.city;
+    final gender = _currentUser!.showGender == 'everyone'
+        ? 'Everyone'
+        : _currentUser!.showGender == 'men'
+            ? 'Men'
+            : 'Women';
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: isPassport ? Colors.blue.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(20),
+              border: isPassport ? Border.all(color: Colors.blue.withValues(alpha: 0.3)) : null,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isPassport ? Icons.flight_takeoff_rounded : Icons.location_on_rounded,
+                  color: isPassport ? Colors.blue : Colors.white70,
+                  size: 14,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  city,
+                  style: TextStyle(
+                    color: isPassport ? Colors.blue : Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Container(width: 1, height: 12, margin: const EdgeInsets.symmetric(horizontal: 10), color: Colors.white24),
+                Text(
+                  '$gender • ${_currentUser!.ageRangeMin}-${_currentUser!.ageRangeMax}',
+                  style: const TextStyle(color: Colors.white70, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _cardController.dispose();
@@ -348,6 +400,8 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
       children: [
         // 24-hour Moments story bar (hookup4u-inspired)
         const MomentsBar(),
+        // Discovery status chip
+        _buildDiscoveryHeader(),
         // Likes-remaining banner for free users running low
         if (_likesRemaining != null && _likesRemaining! <= 10)
           Container(
