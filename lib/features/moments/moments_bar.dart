@@ -263,6 +263,29 @@ class _MomentViewerState extends State<MomentViewer>
     }
   }
 
+  Future<void> _sendReaction(String emoji) async {
+    if (_myUid == null) return;
+    try {
+      await _service.replyToMoment(
+        momentId: widget.moments[_index].id,
+        replierUid: _myUid!,
+        replierName: _myName,
+        text: emoji,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Reaction sent: $emoji ✨'),
+            duration: const Duration(seconds: 1),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        // Advance after reaction to keep the flow moving
+        _advance();
+      }
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     final moment = widget.moments[_index];
@@ -378,6 +401,34 @@ class _MomentViewerState extends State<MomentViewer>
                 textAlign: TextAlign.center,
               ),
             ),
+
+            ),
+
+            // Quick reactions bar — only for others' moments
+            if (moment.uid != _myUid && !_replyFocused)
+              Positioned(
+                bottom: 80,
+                left: 0,
+                right: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: ['❤️', '🔥', '👏', '😂'].map((e) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: GestureDetector(
+                      onTap: () => _sendReaction(e),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white24),
+                        ),
+                        child: Text(e, style: const TextStyle(fontSize: 24)),
+                      ),
+                    ),
+                  )).toList(),
+                ),
+              ),
 
             // Reply bar — only for others' moments
             if (moment.uid != _myUid)

@@ -115,6 +115,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Future<void> _shareMyProfile() async {
+    if (_user == null) return;
+    final name = _user!.displayName;
+    final city = _user!.city;
+    final text = '🍊 Check out my profile on JuiceDates!\n\nI\'m $name in $city, looking for someone who shares my values. Join me and let\'s see our Sparks ⚡\n\nDownload: https://juicedates.app';
+    await Share.share(text, subject: 'My JuiceDates Profile');
+  }
+
   Future<void> _deleteAccount() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -348,6 +356,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             secondary: const Icon(Icons.flash_on_rounded),
           ),
           const _SectionHeader(title: 'Community'),
+          ListTile(
+            leading: const Icon(Icons.qr_code_scanner_rounded),
+            title: const Text('Share My Profile'),
+            subtitle: const Text('Let others find you on JuiceDates'),
+            trailing: const Icon(Icons.share_rounded, size: 20),
+            onTap: _shareMyProfile,
+          ),
           ListTile(
             leading: const Icon(Icons.people_alt_outlined),
             title: const Text('Invite Friends'),

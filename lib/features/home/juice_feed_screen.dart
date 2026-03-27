@@ -141,6 +141,14 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
     } else if (direction == CardSwiperDirection.left) {
       await _service.passUser(uid, swipedUser.uid);
     }
+    
+    // Physical feedback
+    if (direction == CardSwiperDirection.top) {
+      HapticFeedback.heavyImpact();
+    } else {
+      HapticFeedback.lightImpact();
+    }
+
     // Remember for undo
     _lastSwipedUser = swipedUser;
     _lastSwipeDirection = direction;
@@ -179,6 +187,26 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
     return true;
   }
 
+  Future<void> _resetDiscovery() async {
+    if (_currentUser == null) return;
+    setState(() => _loading = true);
+    try {
+      // Reset current user filters in Firestore
+      await _service.updateDiscoveryFilters(
+        uid: _currentUser!.uid,
+        ageMin: 18,
+        ageMax: 80,
+        showGender: 'everyone',
+        distance: 50,
+      );
+      // Wait for it to settle then reload
+      await Future.delayed(const Duration(milliseconds: 500));
+      await _loadFeed();
+    } catch (e) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   void _showDailyLimitDialog({bool isSuperLike = false}) {
     showDialog(
       context: context,
@@ -197,6 +225,8 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
         other: other,
       ),
     );
+    HapticFeedback.mediumImpact();
+    Future.delayed(const Duration(milliseconds: 200), () => HapticFeedback.mediumImpact());
   }
 
   void _showSuperLikeOverlay() {
@@ -243,8 +273,6 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
                   city,
                   style: TextStyle(
                     color: isPassport ? Colors.blue : Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 Container(width: 1, height: 12, margin: const EdgeInsets.symmetric(horizontal: 10), color: Colors.white24),
@@ -290,19 +318,45 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
             return Stack(
               alignment: Alignment.center,
               children: [
-                IconButton(
-                  icon: Icon(
-                    Icons.bolt_rounded,
-                    color: active ? JuiceTheme.primaryTangerine : null,
-                  ),
-                  tooltip: 'Boost',
-                  onPressed: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const BoostScreen()),
-                    );
-                    _loadFeed(); // Refresh user status (boost could be active now)
-                  },
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (active) ...[
+                      StreamBuilder<int>(
+                        stream: Stream.periodic(const Duration(seconds: 1), (i) => i),
+                        builder: (context, _) {
+                          final rem = _currentUser!.boostExpiresAt!.difference(DateTime.now());
+                          if (rem.isNegative) return const SizedBox.shrink();
+                          final m = rem.inMinutes.remainder(60);
+                          final s = rem.inSeconds.remainder(60).toString().padLeft(2, '0');
+                          return Text(
+                            '$m:$s',
+                            style: const TextStyle(
+                              color: JuiceTheme.primaryTangerine,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              fontFeatures: [FontFeature.tabularFigures()],
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 4),
+                    ],
+                    IconButton(
+                      icon: Icon(
+                        Icons.bolt_rounded,
+                        color: active ? JuiceTheme.primaryTangerine : null,
+                      ),
+                      tooltip: 'Boost',
+                      onPressed: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const BoostScreen()),
+                        );
+                        _loadFeed(); // Refresh user status (boost could be active now)
+                      },
+                    ),
+                  ],
                 ),
                 if (active)
                   Positioned(
@@ -412,6 +466,18 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
             Text('Check back later for new Juice matches.',
                 style: TextStyle(color: Colors.grey),
                 textAlign: TextAlign.center),
+            SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _resetDiscovery,
+              icon: Icon(Icons.refresh_rounded),
+              label: Text('RESET DISCOVERY', style: TextStyle(fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: JuiceTheme.primaryTangerine,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+            ),
           ],
         ),
       );

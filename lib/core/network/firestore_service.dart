@@ -28,9 +28,16 @@ class FirestoreService {
   }
 
   Future<void> blockUser(String myUid, String blockedUid) async {
-    await _db.collection('users').doc(myUid).update({
+    final batch = _db.batch();
+    batch.update(_db.collection('users').doc(myUid), {
       'blockedUids': FieldValue.arrayUnion([blockedUid]),
     });
+    // Also remove any existing match between these two
+    final ids = [myUid, blockedUid]..sort();
+    final matchId = '${ids[0]}_${ids[1]}';
+    batch.delete(_db.collection('matches').doc(matchId));
+    
+    await batch.commit();
   }
 
   Future<void> reportUser(String reporterUid, String reportedUid, String reason) async {
@@ -366,7 +373,8 @@ class FirestoreService {
               !matchedUids.contains(u.uid) &&
               !blockedUids.contains(u.uid) &&
               u.uid != uid &&
-              !u.isBanned)
+              !u.isBanned &&
+              !u.invisibleMode)
           .toList();
     });
   }
