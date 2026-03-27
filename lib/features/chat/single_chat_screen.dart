@@ -431,6 +431,16 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
     );
   }
 
+  Future<void> _initiateCall(String type) async {
+    final text = type == 'video' ? '🎥 Requesting a video call...' : '📞 Requesting an audio call...';
+    await _service.sendMessage(widget.matchId, _myUid, text, type: 'call_request', extra: {'callType': type});
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${type == 'video' ? 'Video' : 'Audio'} call request sent!')),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _typingTimer?.cancel();
