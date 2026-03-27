@@ -553,6 +553,39 @@ class FirestoreService {
     }
   }
 
+  /// Uploads an image to Cloudinary and sends it as a message.
+  Future<void> sendImageMessage(
+    String matchId,
+    File file, {
+    required String senderId,
+    String? recipientUid,
+    String? senderName,
+    required int tierUnlocked,
+  }) async {
+    // 1. Upload to Cloudinary
+    final url = await _cloudinary.uploadPhoto(
+      file: file,
+      publicId: 'juicedates/chats/$matchId/${DateTime.now().millisecondsSinceEpoch}',
+    );
+
+    // 2. Send message record
+    final message = JuiceMessage(
+      senderId: senderId,
+      text: 'Sent a photo',
+      tierUnlocked: tierUnlocked,
+      timestamp: DateTime.now(),
+      type: 'image',
+      voiceUrl: url, // Re-purpose voiceUrl field for simplicity or use it as a generic attachment URL
+    );
+
+    await sendMessage(
+      matchId,
+      message,
+      recipientUid: recipientUid,
+      senderName: senderName,
+    );
+  }
+
   // ── Typing indicators ─────────────────────────────────────────────────────
 
   /// Sets or clears the typing flag for [uid] inside the match document.
