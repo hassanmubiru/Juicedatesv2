@@ -849,24 +849,23 @@ class FirestoreService {
       for (final d in views.docs) {
         batch.delete(d.reference);
       }
-    } catch (e) {
-      print('Cleanup: Profile views error $e');
-    }
+    } catch (_) {}
 
     // 2. Delete winks sent/received
     try {
       final winksSent = await _db.collection('winks').where('fromUid', isEqualTo: uid).get();
       final winksRecv = await _db.collection('winks').where('toUid', isEqualTo: uid).get();
-      for (final d in winksSent.docs) batch.delete(d.reference);
-      for (final d in winksRecv.docs) batch.delete(d.reference);
-    } catch (e) {
-      print('Cleanup: Winks error $e');
-    }
+      for (final d in winksSent.docs) {
+        batch.delete(d.reference);
+      }
+      for (final d in winksRecv.docs) {
+        batch.delete(d.reference);
+      }
+    } catch (_) {}
 
     // 3. Delete moments
     try {
       final moments = await _db.collection('moments').where('uid', isEqualTo: uid).get();
-      for (final d in moments.docs) batch.delete(d.reference);
     } catch (e) {
       print('Cleanup: Moments error $e');
     }
