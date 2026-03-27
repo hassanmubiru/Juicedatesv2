@@ -13,6 +13,7 @@ import '../../core/theme/juice_theme.dart';
 import '../../models/user_models.dart';
 import '../../main.dart' show themeModeNotifier;
 import '../home/user_profile_screen.dart';
+import 'passport_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -282,6 +283,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   )
                 : const Icon(Icons.chevron_right),
             onTap: () => Navigator.pushNamed(context, '/premium-paywall'),
+          ),
+          ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.public_rounded,
+                  color: Colors.blue, size: 20),
+            ),
+            title: const Text('Juice Passport'),
+            subtitle: Text(
+              _user?.passportCity != null
+                  ? 'Currently in ${_user?.passportCity}'
+                  : 'Change location',
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              if (!_isPremium) {
+                Navigator.pushNamed(context, '/premium-paywall');
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PassportScreen()),
+                );
+              }
+            },
           ),
           const _SectionHeader(title: 'Privacy & Safety'),
           SwitchListTile(

@@ -101,6 +101,14 @@ class FirestoreService {
             !excluded.contains(u.uid) &&
             !u.blockedUids.contains(uid) &&
             !u.isAdmin)
+        .where((u) {
+          // If passporting, we strictly show people in that city.
+          // Otherwise, we show people in the same city as the user.
+          if (currentUser.passportCity != null) {
+            return u.city == currentUser.passportCity;
+          }
+          return u.city == currentUser.city;
+        })
         .toList();
         
     // Boosted users always float to the top; within each group sort by Sparks
