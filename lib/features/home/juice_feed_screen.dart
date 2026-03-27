@@ -10,6 +10,8 @@ import '../../widgets/juice_card.dart';
 import 'user_profile_screen.dart';
 import '../moments/moments_bar.dart';
 import '../boost/boost_screen.dart';
+import '../../widgets/profile_nudge_card.dart';
+import '../../features/premium/settings_screen.dart';
 import 'top_picks_screen.dart';
 
 class JuiceFeedScreen extends StatefulWidget {
@@ -59,6 +61,24 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
       }
 
       final users = await _service.getFeedUsers(uid, limit: 60, isPremium: isPremium);
+      
+      // Inject profile nudge card if profile strength < 80%
+      if (mounted && _currentUser != null && users.isNotEmpty) {
+        final strength = computeStrength(_currentUser!);
+        if (strength.score < 80) {
+          // Special virtual user ID to signal cardBuilder to show the nudge
+          final nudgeUser = JuiceUser(
+            uid: 'profile_nudge',
+            displayName: 'Juice Progress',
+            photos: [],
+            city: '',
+            juiceProfile: JuiceProfile(family: 0, career: 0, lifestyle: 0, ethics: 0, fun: 0),
+            juiceSummary: '',
+          );
+          users.insert(users.length >= 2 ? 1 : 0, nudgeUser);
+        }
+      }
+
       if (mounted) {
         setState(() {
           _feedUsers = users;
@@ -448,6 +468,16 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
             padding: const EdgeInsets.all(24.0),
             cardBuilder: (context, index, hOff, vOff) {
               final user = _feedUsers[index];
+              
+              if (user.uid == 'profile_nudge') {
+                return ProfileNudgeCard(
+                  user: _currentUser!,
+                  score: computeStrength(_currentUser!).score,
+                  missing: computeStrength(_currentUser!).missing,
+                  onComplete: () => Navigator.pushNamed(context, '/edit-profile'),
+                );
+              }
+
               final sparks = _currentUser != null
                   ? JuiceEngine.computeSparks(
                       _currentUser!.juiceProfile, user.juiceProfile)
