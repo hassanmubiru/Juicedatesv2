@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import '../../core/network/firestore_service.dart';
 import '../../core/theme/juice_theme.dart';
@@ -27,7 +26,6 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
   JuiceUser? _currentUser;
   bool _loading = true;
   String? _error;
-  StreamSubscription<List<JuiceUser>>? _feedSub;
   // null = unlimited (premium), int = likes left today
   int? _likesRemaining;
   // null = unlimited (premium), int = super likes left today
