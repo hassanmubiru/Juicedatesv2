@@ -64,7 +64,7 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
       
       // Inject profile nudge card if profile strength < 80%
       if (mounted && _currentUser != null && users.isNotEmpty) {
-        final strength = computeStrength(_currentUser!);
+        final strength = JuiceEngine.computeProfileStrength(_currentUser!);
         if (strength.score < 80) {
           // Special virtual user ID to signal cardBuilder to show the nudge
           final nudgeUser = JuiceUser(
@@ -226,9 +226,9 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: isPassport ? Colors.blue.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.08),
+              color: isPassport ? Colors.blue.withOpacity(0.1) : Colors.white.withOpacity(0.08),
               borderRadius: BorderRadius.circular(20),
-              border: isPassport ? Border.all(color: Colors.blue.withValues(alpha: 0.3)) : null,
+              border: isPassport ? Border.all(color: Colors.blue.withOpacity(0.3)) : null,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -472,8 +472,8 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
               if (user.uid == 'profile_nudge') {
                 return ProfileNudgeCard(
                   user: _currentUser!,
-                  score: computeStrength(_currentUser!).score,
-                  missing: computeStrength(_currentUser!).missing,
+                  score: JuiceEngine.computeProfileStrength(_currentUser!).score,
+                  missing: JuiceEngine.computeProfileStrength(_currentUser!).missing,
                   onComplete: () => Navigator.pushNamed(context, '/edit-profile'),
                 );
               }

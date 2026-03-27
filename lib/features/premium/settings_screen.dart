@@ -412,32 +412,9 @@ class _ProfileStrengthCard extends StatelessWidget {
   final JuiceUser user;
   const _ProfileStrengthCard({required this.user});
 
-  /// Returns a 0–100 strength score and a list of missing field hints.
-  static ({int score, List<String> missing}) _compute(JuiceUser u) {
-    final checks = <(bool, String)>[
-      (u.photos.isNotEmpty, 'Add a profile photo'),
-      (u.photos.length >= 3, 'Add 3+ photos'),
-      (u.bio != null && u.bio!.trim().length > 20, 'Write a bio'),
-      (u.interests.length >= 3, 'Add 3+ interests'),
-      (u.university != null && u.university!.isNotEmpty, 'Add your university'),
-      (u.jobTitle != null && u.jobTitle!.isNotEmpty, 'Add your job title'),
-      (u.sexualOrientation != null, 'Set sexual orientation'),
-      (u.bio != null && u.bio!.trim().isNotEmpty, 'Write something in your bio'),
-      (u.juiceProfile.family > 0, 'Complete the Juice Quiz'),
-      (u.city != 'Unknown' && u.city.isNotEmpty, 'Set your city'),
-    ];
-    final total = checks.length;
-    final done = checks.where((c) => c.$1).length;
-    final missing = checks
-        .where((c) => !c.$1)
-        .map((c) => c.$2)
-        .toList();
-    return (score: (done * 100 ~/ total), missing: missing.take(3).toList());
-  }
-
   @override
   Widget build(BuildContext context) {
-    final result = _compute(user);
+    final result = JuiceEngine.computeProfileStrength(user);
     final score = result.score;
     final missing = result.missing;
     final color = score >= 80
