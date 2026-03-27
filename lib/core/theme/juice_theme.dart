@@ -8,10 +8,25 @@ class JuiceTheme {
   static const Color backgroundWhite = Color(0xFFFFFFFF);
   static const Color textDark = Color(0xFF2D2D2D);
 
+  static const Color matchGold = Color(0xFFFFD700);
+  static const Color sparkPink = Color(0xFFFF1493);
+
   static final LinearGradient primaryGradient = const LinearGradient(
     colors: [primaryTangerine, secondaryCitrus],
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static final LinearGradient matchGradient = const LinearGradient(
+    colors: [primaryTangerine, sparkPink, matchGold],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static final LinearGradient premiumGradient = const LinearGradient(
+    colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)], // Purple/Indigo premium
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
   );
 
   static ThemeData get lightTheme {

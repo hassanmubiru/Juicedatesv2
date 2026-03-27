@@ -75,12 +75,16 @@ class FirestoreService {
   /// Premium users: passed users are shown again + larger pool so they never run out.
   Stream<List<JuiceUser>> getFeedUsers(String uid,
       {int limit = 60, bool isPremium = false}) {
+    // Basic server-side filtering to reduce data transfer and processing
     return _db
         .collection('users')
+        .where('isBanned', isEqualTo: false)
+        .where('invisibleMode', isEqualTo: false)
         .limit(isPremium ? 200 : limit)
         .snapshots()
         .asyncMap((snapshot) async {
       final currentUserDoc = await _db.collection('users').doc(uid).get();
+      if (!currentUserDoc.exists) return [];
       final currentUser = JuiceUser.fromFirestore(currentUserDoc);
       final excluded = <String>{
         ...currentUser.likedUids,
@@ -94,9 +98,7 @@ class FirestoreService {
           .where((u) =>
               !excluded.contains(u.uid) &&
               !u.blockedUids.contains(uid) &&
-              u.isBanned != true &&
-              !u.isAdmin &&
-              !u.invisibleMode)
+              !u.isAdmin)
           .toList();
       // Boosted users always float to the top; within each group sort by Sparks
       final now = DateTime.now();
@@ -198,6 +200,18 @@ class FirestoreService {
     await _db.collection('users').doc(fromUid).update({
       'passedUids': FieldValue.arrayUnion([toUid]),
     });
+  }
+
+  /// Removes a match between two users if one exists.
+  /// Used primarily for undoing a like that created a match.
+  Future<void> removePotentialMatch(String uid1, String uid2) async {
+    final ids = [uid1, uid2]..sort();
+    final matchId = '${ids[0]}_${ids[1]}';
+    try {
+      await _db.collection('matches').doc(matchId).delete();
+    } catch (e) {
+      print('Core: Failed to remove match $matchId: $e');
+    }
   }
 
   // ── Super Like ────────────────────────────────────────────────────────────
@@ -756,26 +770,55 @@ class FirestoreService {
 
   // ── Delete Account ────────────────────────────────────────────────────────
 
-  /// Hard-deletes the user's Firestore document and signs them out.
+  /// Hard-deletes the user's Firestore document and associated activity data.
   /// Does NOT delete Firebase Auth account (requires re-auth on client for that).
   Future<void> deleteAccount(String uid) async {
-    // Delete profile views subcollection (best effort)
+    final batch = _db.batch();
+
+    // 1. Delete profile views subcollection
     try {
       final views = await _db
           .collection('users')
           .doc(uid)
           .collection('profileViews')
           .get();
-      final batch = _db.batch();
       for (final d in views.docs) {
         batch.delete(d.reference);
       }
-      await batch.commit();
-    } catch (_) {}
+    } catch (e) {
+      print('Cleanup: Profile views error $e');
+    }
 
-    // Remove from liked/passed lists of others would require a cloud function;
-    // here we just delete the user document itself.
-    await _db.collection('users').doc(uid).delete();
+    // 2. Delete winks sent/received
+    try {
+      final winksSent = await _db.collection('winks').where('fromUid', isEqualTo: uid).get();
+      final winksRecv = await _db.collection('winks').where('toUid', isEqualTo: uid).get();
+      for (final d in winksSent.docs) batch.delete(d.reference);
+      for (final d in winksRecv.docs) batch.delete(d.reference);
+    } catch (e) {
+      print('Cleanup: Winks error $e');
+    }
+
+    // 3. Delete moments
+    try {
+      final moments = await _db.collection('moments').where('uid', isEqualTo: uid).get();
+      for (final d in moments.docs) batch.delete(d.reference);
+    } catch (e) {
+      print('Cleanup: Moments error $e');
+    }
+
+    // 4. Delete matches (hard delete for simplicity)
+    try {
+      final matches = await _db.collection('matches').where('users', arrayContains: uid).get();
+      for (final d in matches.docs) batch.delete(d.reference);
+    } catch (e) {
+      print('Cleanup: Matches error $e');
+    }
+
+    // 5. Delete the user document itself
+    batch.delete(_db.collection('users').doc(uid));
+
+    await batch.commit();
   }
 
   Future<void> submitVerificationRequest({

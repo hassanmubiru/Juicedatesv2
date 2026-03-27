@@ -112,30 +112,7 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
       }
       _cardController.swipe(CardSwiperDirection.top);
     } on DailyLimitException {
-      if (!mounted) return;
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('⭐ Super Like limit'),
-          content: const Text(
-              'You\'ve used all 3 Super Likes for today.\n\nUpgrade to Juice Plus+ for unlimited Super Likes!'),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Later')),
-            ElevatedButton(
-              style:
-                  ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/premium-paywall');
-              },
-              child: const Text('Get Plus+',
-                  style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
-      );
+      if (mounted) _showDailyLimitDialog(isSuperLike: true);
     }
   }
 
@@ -145,6 +122,12 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
     if (uid == null || _lastSwipedUser == null) return true;
     final undoneUser = _lastSwipedUser!;
     final undoneDirection = _lastSwipeDirection;
+
+    // Consistency: If it was a like, we must also remove the potential match doc
+    if (undoneDirection == CardSwiperDirection.right) {
+      _service.removePotentialMatch(uid, undoneUser.uid);
+    }
+
     // Fire-and-forget Firestore reversal
     if (undoneDirection == CardSwiperDirection.left) {
       _service.updateUserProfile(uid, {
@@ -162,48 +145,22 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
     return true;
   }
 
-  void _showDailyLimitDialog() {
+  void _showDailyLimitDialog({bool isSuperLike = false}) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Daily limit reached 🍊"),
-        content: const Text(
-            'You\'ve used all 50 free likes for today.\n\nUpgrade to Juice Plus+ for unlimited daily likes!'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Later')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF6B35)),
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/premium-paywall');
-            },
-            child: const Text('Get Plus+', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+      barrierDismissible: true,
+      builder: (_) => _JuiceLimitDialog(isSuperLike: isSuperLike),
     );
   }
 
   void _showMatchDialog(JuiceUser other) {
+    if (_currentUser == null) return;
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("It's a Juice Match! 🎉"),
-        content: Text(
-            'You and ${other.displayName} both liked each other!\nStart a conversation.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Keep Swiping')),
-          TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/home');
-              },
-              child: const Text('Go to Matches')),
-        ],
+      barrierDismissible: false,
+      builder: (_) => _JuiceMatchDialog(
+        me: _currentUser!,
+        other: other,
       ),
     );
   }
@@ -506,16 +463,25 @@ class _FeedActionBtn extends StatelessWidget {
       width: diameter,
       height: diameter,
       child: Stack(
+        clipBehavior: Clip.none,
         children: [
           btn,
           Positioned(
-            top: 0,
-            right: 0,
+            top: -2,
+            right: -2,
             child: Container(
-              width: 18,
-              height: 18,
-              decoration: const BoxDecoration(
-                  color: Colors.orange, shape: BoxShape.circle),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.orange,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 4,
+                  ),
+                ],
+              ),
               child: Center(
                 child: Text(
                   '$badge',
@@ -528,6 +494,147 @@ class _FeedActionBtn extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Custom Premium Dialogs ──────────────────────────────────────────────────
+
+class _JuiceMatchDialog extends StatelessWidget {
+  final JuiceUser me;
+  final JuiceUser other;
+
+  const _JuiceMatchDialog({required this.me, required this.other});
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          gradient: JuiceTheme.matchGradient,
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              "IT'S A MATCH!",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 32,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              "You and ${other.displayName} have squeezed a connection!",
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+            ),
+            const SizedBox(height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _circularAvatar(me.photoUrl),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: Icon(Icons.favorite_rounded, color: Colors.white, size: 40),
+                ),
+                _circularAvatar(other.photoUrl),
+              ],
+            ),
+            const SizedBox(height: 40),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: JuiceTheme.primaryTangerine,
+                minimumSize: const Size(double.infinity, 56),
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/home'); // Matches tab
+              },
+              child: const Text("SAY HELLO", style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("KEEP SWIPING", style: TextStyle(color: Colors.white70)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _circularAvatar(String? url) {
+    return Container(
+      width: 100,
+      height: 100,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 4),
+        image: url != null
+            ? DecorationImage(image: NetworkImage(url), fit: BoxFit.cover)
+            : null,
+      ),
+      child: url == null ? const Icon(Icons.person, color: Colors.white) : null,
+    );
+  }
+}
+
+class _JuiceLimitDialog extends StatelessWidget {
+  final bool isSuperLike;
+
+  const _JuiceLimitDialog({required this.isSuperLike});
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text("🍊", style: TextStyle(fontSize: 60)),
+            const SizedBox(height: 16),
+            Text(
+              isSuperLike ? "Super Limit Reached" : "Daily Limit Reached",
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              isSuperLike
+                  ? "You've used all 3 Super Likes for today. upgrade for unlimited!"
+                  : "You've used all 50 free likes for today. Upgrade to Juice Plus+ for unlimited likes!",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: JuiceTheme.primaryTangerine,
+                minimumSize: const Size(double.infinity, 56),
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/premium-paywall');
+              },
+              child: const Text("GET JUICE PLUS+", style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("MAYBE LATER", style: TextStyle(color: Colors.grey[500])),
+            ),
+          ],
+        ),
       ),
     );
   }
