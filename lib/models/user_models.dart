@@ -226,9 +226,10 @@ class JuiceMessage {
   final String senderId;
   final String text;
   final String? voiceUrl;
+  final String? imageUrl;
   final int tierUnlocked;
   final DateTime timestamp;
-  /// 'text' | 'gift'
+  /// 'text' | 'gift' | 'image'
   final String type;
   /// only set when type == 'gift'
   final String? giftEmoji;
@@ -239,6 +240,7 @@ class JuiceMessage {
     required this.senderId,
     required this.text,
     this.voiceUrl,
+    this.imageUrl,
     required this.tierUnlocked,
     required this.timestamp,
     this.type = 'text',
@@ -251,6 +253,7 @@ class JuiceMessage {
       senderId: data['senderId'] ?? '',
       text: data['text'] ?? '',
       voiceUrl: data['voiceUrl'],
+      imageUrl: data['imageUrl'],
       tierUnlocked: (data['tierUnlocked'] as num?)?.toInt() ?? 1,
       timestamp:
           (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
