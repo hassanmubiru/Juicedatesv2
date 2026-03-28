@@ -150,6 +150,8 @@ class JuiceEngine {
       if (results.length == 3) break;
     }
     return results;
+  }
+
   /// Returns a 0–100 profile strength score and a list of missing field hints.
   static ({int score, List<String> missing}) computeProfileStrength(dynamic u) {
     // We use dynamic here to avoid circular dependencies with JuiceUser if needed,

@@ -676,11 +676,8 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
                         ),
                       );
                     }
-                        ),
-                  );
-                }
-                
-                if (msg.type == 'call_request') {
+
+                    if (msg.type == 'call_request') {
                   final callType = msg.extra?['callType'] ?? 'video';
                   return Align(
                     alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,

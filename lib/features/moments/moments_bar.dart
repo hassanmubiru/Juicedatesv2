@@ -402,8 +402,6 @@ class _MomentViewerState extends State<MomentViewer>
               ),
             ),
 
-            ),
-
             // Quick reactions bar — only for others' moments
             if (moment.uid != _myUid && !_replyFocused)
               Positioned(
