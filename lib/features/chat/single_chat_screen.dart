@@ -433,7 +433,19 @@ class _SingleChatScreenState extends State<SingleChatScreen> {
 
   Future<void> _initiateCall(String type) async {
     final text = type == 'video' ? '🎥 Requesting a video call...' : '📞 Requesting an audio call...';
-    await _service.sendMessage(widget.matchId, _myUid, text, type: 'call_request', extra: {'callType': type});
+    await _service.sendMessage(
+      widget.matchId,
+      JuiceMessage(
+        senderId: _myUid,
+        text: text,
+        tierUnlocked: _currentTier,
+        timestamp: DateTime.now(),
+        type: 'call_request',
+        extra: {'callType': type},
+      ),
+      recipientUid: widget.partnerUid,
+      senderName: _myName.isNotEmpty ? _myName : 'Your match',
+    );
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${type == 'video' ? 'Video' : 'Audio'} call request sent!')),
