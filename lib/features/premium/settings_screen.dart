@@ -11,6 +11,7 @@ import '../../core/network/cloudinary_service.dart';
 import '../../core/network/firestore_service.dart';
 import '../../core/theme/juice_theme.dart';
 import '../../models/user_models.dart';
+import '../../core/utils/juice_engine.dart';
 import '../../main.dart' show themeModeNotifier;
 import '../home/user_profile_screen.dart';
 import 'passport_screen.dart';
