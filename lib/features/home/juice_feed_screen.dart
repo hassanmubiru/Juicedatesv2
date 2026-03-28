@@ -452,7 +452,7 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
     }
 
     if (_feedUsers.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

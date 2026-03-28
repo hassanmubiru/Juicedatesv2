@@ -69,7 +69,7 @@ class ProfileNudgeCard extends StatelessWidget {
                   const Text(
                     "Complete your profile to get up to 5x more matches. People love to see who you really are!",
                     style: TextStyle(
-                      color: Colors.whitee70,
+                      color: Colors.white70,
                       fontSize: 16,
                       height: 1.4,
                     ),
