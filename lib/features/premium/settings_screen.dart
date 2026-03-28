@@ -394,7 +394,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const Center(
-              child: Text('v1.0.7 (JuiceDates Beta)',
+              child: Text('v1.1.2 (JuiceDates Beta)',
                   style: TextStyle(color: Colors.grey, fontSize: 12))),
           const SizedBox(height: 32),
         ],
