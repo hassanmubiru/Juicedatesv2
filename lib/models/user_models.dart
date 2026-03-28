@@ -235,6 +235,8 @@ class JuiceMessage {
   final String? giftEmoji;
   /// UIDs that have read (seen) this message
   final List<String> readBy;
+  /// Additional metadata (e.g. callType)
+  final Map<String, dynamic> extra;
 
   JuiceMessage({
     required this.senderId,
@@ -246,6 +248,7 @@ class JuiceMessage {
     this.type = 'text',
     this.giftEmoji,
     this.readBy = const [],
+    this.extra = const {},
   });
 
   factory JuiceMessage.fromFirestore(Map<String, dynamic> data) {
@@ -260,6 +263,7 @@ class JuiceMessage {
       type: data['type'] ?? 'text',
       giftEmoji: data['giftEmoji'],
       readBy: List<String>.from(data['readBy'] ?? []),
+      extra: Map<String, dynamic>.from(data['extra'] ?? {}),
     );
   }
 }

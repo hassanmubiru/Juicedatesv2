@@ -102,7 +102,11 @@ class FirestoreService {
         .limit(isPremium ? 200 : limit)
         .get();
 
+    final users = snapshot.docs
+        .map((doc) => JuiceUser.fromFirestore(doc))
         .where((u) {
+          if (excluded.contains(u.uid)) return false;
+          
           // 1. Passport / City filtering
           if (currentUser.passportCity != null) {
             if (u.city != currentUser.passportCity) return false;
@@ -138,6 +142,21 @@ class FirestoreService {
       return sB.compareTo(sA);
     });
     return users;
+  }
+
+  Future<void> updateDiscoveryFilters({
+    required String uid,
+    required int ageMin,
+    required int ageMax,
+    required String showGender,
+    required double distance,
+  }) async {
+    await _db.collection('users').doc(uid).update({
+      'ageRangeMin': ageMin,
+      'ageRangeMax': ageMax,
+      'showGender': showGender,
+      'maxDistance': distance,
+    });
   }
 
   // ── Likes / Passes ────────────────────────────────────────────────────────
@@ -554,6 +573,7 @@ class FirestoreService {
       'timestamp': FieldValue.serverTimestamp(),
       'type': message.type,
       if (message.giftEmoji != null) 'giftEmoji': message.giftEmoji,
+      'extra': message.extra,
       // Sender has already "read" the message they just sent
       'readBy': [message.senderId],
     });
