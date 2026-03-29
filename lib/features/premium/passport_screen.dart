@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/network/firestore_service.dart';
 import '../../core/theme/juice_theme.dart';
-import '../../widgets/juice_button.dart';
 
 class PassportScreen extends StatefulWidget {
   const PassportScreen({super.key});
