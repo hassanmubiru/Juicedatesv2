@@ -12,7 +12,6 @@ import 'user_profile_screen.dart';
 import '../moments/moments_bar.dart';
 import '../boost/boost_screen.dart';
 import '../../widgets/profile_nudge_card.dart';
-import '../../features/premium/settings_screen.dart';
 import 'top_picks_screen.dart';
 
 class JuiceFeedScreen extends StatefulWidget {
