@@ -248,8 +248,8 @@ class FirestoreService {
     final matchId = '${ids[0]}_${ids[1]}';
     try {
       await _db.collection('matches').doc(matchId).delete();
-    } catch (e) {
-      print('Core: Failed to remove match $matchId: $e');
+    } catch (_) {
+      // Non-critical operation; silently ignore errors
     }
   }
 
@@ -923,6 +923,9 @@ class FirestoreService {
     // 3. Delete moments
     try {
       final moments = await _db.collection('moments').where('uid', isEqualTo: uid).get();
+      for (final d in moments.docs) {
+        batch.delete(d.reference);
+      }
     } catch (e) {
       print('Cleanup: Moments error $e');
     }
