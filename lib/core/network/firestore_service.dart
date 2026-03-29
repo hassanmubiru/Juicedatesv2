@@ -926,16 +926,16 @@ class FirestoreService {
       for (final d in moments.docs) {
         batch.delete(d.reference);
       }
-    } catch (e) {
-      print('Cleanup: Moments error $e');
+    } catch (_) {
+      // Non-critical cleanup operation; silently ignore errors
     }
 
     // 4. Delete matches (hard delete for simplicity)
     try {
       final matches = await _db.collection('matches').where('users', arrayContains: uid).get();
       for (final d in matches.docs) batch.delete(d.reference);
-    } catch (e) {
-      print('Cleanup: Matches error $e');
+    } catch (_) {
+      // Non-critical cleanup operation; silently ignore errors
     }
 
     // 5. Delete the user document itself
