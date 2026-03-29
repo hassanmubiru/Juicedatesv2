@@ -256,9 +256,9 @@ class _JuiceFeedScreenState extends State<JuiceFeedScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: isPassport ? Colors.blue.withOpacity(0.1) : Colors.white.withOpacity(0.08),
+              color: isPassport ? Colors.blue.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(20),
-              border: isPassport ? Border.all(color: Colors.blue.withOpacity(0.3)) : null,
+              border: isPassport ? Border.all(color: Colors.blue.withValues(alpha: 0.3)) : null,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
