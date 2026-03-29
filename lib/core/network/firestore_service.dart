@@ -933,7 +933,9 @@ class FirestoreService {
     // 4. Delete matches (hard delete for simplicity)
     try {
       final matches = await _db.collection('matches').where('users', arrayContains: uid).get();
-      for (final d in matches.docs) batch.delete(d.reference);
+      for (final d in matches.docs) {
+        batch.delete(d.reference);
+      }
     } catch (_) {
       // Non-critical cleanup operation; silently ignore errors
     }
