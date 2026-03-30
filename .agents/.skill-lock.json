@@ -1,0 +1,15 @@
+{
+  "version": 3,
+  "skills": {
+    "flutter-skill": {
+      "source": "thruthesky/flutter-skill",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/thruthesky/flutter-skill.git",
+      "skillPath": "SKILL.md",
+      "skillFolderHash": "40018801cc42230d8d7c187ca1ab8dd0fbdb59ad",
+      "installedAt": "2026-03-29T21:11:42.834Z",
+      "updatedAt": "2026-03-29T21:11:42.834Z"
+    }
+  },
+  "dismissed": {}
+}
